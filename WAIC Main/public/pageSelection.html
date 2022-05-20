@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+    <head>
+
+        <meta charset="utf-8">
+        <title>My Library</title>
+
+        <!-- Styling sheets  -->
+        <link rel="stylesheet" href="stylings/waic.css">
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
+        
+        <!-- importing d3.js, bootstrap and jquery scripts -->
+        <script src="https://d3js.org/d3.v6.min.js"></script>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+        <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.13.0/jquery-ui.min.js" type="text/javascript"></script>
+        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+        
+        <!-- importing the event handler jquery script -->
+        <script src="scripts/jq-events.js"></script>
+        <style>
+            #rootContainer
+            {
+                background-color: antiquewhite;
+            }
+            #pagesPreview
+            {
+                background-color: lightgrey;
+                width: 700px;
+                height: 600px;
+                display: grid;
+                grid-template-columns: repeat(3,auto);
+                justify-items: center;
+                overflow-y: scroll;
+            }
+            .pageViewed
+            {
+                margin-top: 20px;
+                width: 170px;
+                height: 180px;
+                background-color: red;
+            }
+        </style>
+    </head>
+
+    <body>
+        <!-- importing the layout scripts-->
+        <script src="scripts/navigationBar/navigationBar.js"></script>
+        <script>
+            $("body").append(navigationBar);
+        </script>
+        
+        
+        <div id="therootContainer">
+            <center> 
+                <h1>Pages</h1>
+                <div id="pagesPreview">
+                    <div class="pageViewed">
+                        1
+                    </div>
+                    <div class="pageViewed">
+                        2
+                    </div>
+                    <div class="pageViewed">
+                        3
+                    </div>
+                    <div class="pageViewed">
+                        4
+                    </div>
+                    <div class="pageViewed">
+                        5
+                    </div>
+                    <div class="pageViewed">
+                        6
+                    </div>
+                    <div class="pageViewed">
+                        7
+                    </div>
+                    <div class="pageViewed">
+                        8
+                    </div>
+                    <div class="pageViewed">
+                        9
+                    </div>
+                    <div class="pageViewed">
+                        10
+                    </div>
+                    <div class="pageViewed">
+                        11
+                    </div>
+                </div>
+            </center>
+        </div>
+    </body>
+</html>

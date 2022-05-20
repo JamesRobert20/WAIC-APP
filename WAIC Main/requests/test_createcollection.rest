@@ -1,0 +1,19 @@
+POST http://localhost:3001/api/collections
+Content-Type: application/json
+
+{
+  "collectionName": "Test Collection",
+  "collectionFiles": [
+  {
+    "fileName": "UnessayRubricTemplate.pdf",
+    "pages": [1]
+  },
+  {
+    "fileName": "CPSC233W22ProjectDemo3.pdf",
+    "pages": [2]
+  },
+  {
+    "fileName": "SoTL & Sexual Assault - TI Grant Application (02.07.18).pdf",
+    "pages": [2,4,5]
+  }]
+}

@@ -1,0 +1,6 @@
+POST http://localhost:3000/api/files/SoTL & Sexual Assault - TI Grant Application (02.07.18).pdf
+Content-Type: application/json
+
+{
+  "tag": "togg"
+}
