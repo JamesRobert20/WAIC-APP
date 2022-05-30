@@ -1,0 +1,7 @@
+POST http://localhost:3000/api/files/search
+Content-Type: application/json
+
+{
+  "numPagesMax": "5",
+  "lastModBefore": "2022-02-02"
+}

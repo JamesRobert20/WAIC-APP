@@ -1,0 +1,310 @@
+.gridHeading
+{
+    margin: 0px;
+    /* This is the colour gradient customization */
+    background-image: linear-gradient(240deg, black, rgb(206, 138, 13));
+    background-size: 100%;
+    -webkit-background-clip: text;
+    -moz-background-clip: text;
+    -webkit-text-fill-color: transparent; 
+    -moz-text-fill-color: transparent;
+}
+#search-bar-2
+{
+    text-align: left;
+    width: 412px;
+    height: 30px;
+    border-radius: 10px;
+    border: 2px solid rgb(185, 108, 14);
+    background-color: white;
+}
+.search-image-2
+{
+    opacity: 75%;
+    width: 24px;
+    height: 22px;
+}
+#search-field-2
+{
+    border-right: 1px solid white !important;
+    background-color: white;  
+    width: 340px;
+    border: none;
+    height: 99%;
+    /* hide border when search field is clicked */
+    outline: none;
+}
+#search-tags-container
+{
+    display: flex;
+    flex-direction: row;
+    justify-content: space-around;
+    align-items: center;
+    margin-top: 5px;
+    margin-bottom: 5px;
+    width: 420px;
+    height: 35px;
+}
+.search-tags
+{
+    text-align: center;
+    border: 2px solid rgb(185, 108, 14);
+    border-radius: 10px;
+    background-color: white;
+    width: 100px;
+    height: 30px;
+    font-size: medium;
+    font-weight: bold;
+    color: rgb(182, 163, 163);
+}
+.tag-names
+{
+    text-align: center;
+    color: rgb(182, 163, 163);
+    font-size: medium;
+    font-weight: bold;
+    height: 20px;
+    
+}
+#fileSelectionGrids
+{
+    width: 1250px;
+    height: 500px;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-around;
+}
+.fileSelectionGrids-item
+{
+    flex-basis: 48%;
+}
+#filesListGrid
+{
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    justify-items: center;
+    width: 92%;
+    height: 390px;
+    border: 5px solid rgb(185, 108, 14);
+    border-radius: 10px;
+    overflow-y: auto;
+}
+/* works on firfeox */
+#filesListGrid
+{
+    scrollbar-width: thin;
+    scrollbar-color: rgb(185, 108, 14) white;
+}
+/* supported in chrome, edge, safari only */
+#filesListGrid::-webkit-scrollbar
+{
+    width: 11px;
+} 
+#filesListGrid::-webkit-scrollbar-track
+{
+    border: 2px solid white;
+    border-radius: 16px;
+    background-color: grey;
+}
+#filesListGrid::-webkit-scrollbar-thumb
+{
+    width: 11px;
+    background-color: white;
+    border-radius: 15px;
+    border: 1px solid black;
+}
+.search-result
+{
+    width: 150px;
+    height: 190px;
+    margin: 20px 0px 0px 0px;
+}
+.result-file
+{
+    border-radius: 10px;
+    border: 1px solid black;
+    width: 100%;
+    height: 88%;
+}
+#filePreviewGrid
+{
+    box-shadow: 3px 3px 6px rgb(185, 108, 14);
+    padding-left: 5px;
+    border: 7px solid rgb(185, 108, 14);
+    border-radius: 15px;
+}
+.fileOnDisplay
+{
+    display: grid;
+    grid-template-columns: repeat(3,1fr);
+    justify-items: center;
+    overflow-y: auto;
+}
+.videoOnDisplay
+{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+/* works on firfeox */
+#filePreviewGrid
+{
+    scrollbar-width: thin;
+    scrollbar-color: rgb(185, 108, 14) white;
+}
+/* supported in chrome, edge, safari only */
+#filePreviewGrid::-webkit-scrollbar
+{
+    width: 11px;
+} 
+#filePreviewGrid::-webkit-scrollbar-track
+{
+    border: 2px solid aliceblue;
+    border-radius: 16px;
+    background-color: grey;
+}
+#filePreviewGrid::-webkit-scrollbar-thumb
+{
+    width: 11px;
+    background-color: white;
+    border-radius: 15px;
+    border: 1px solid black;
+}
+.fileSelected, .pageSelected
+{
+    border-radius: 15px;
+    border: 3px solid rgb(24, 99, 238) !important;
+    box-shadow: 2px 2px 3px rgb(24, 99, 238) !important;
+    transform: scale(1.08);
+}
+.pageDisplayItem
+{
+    display: flex;
+    flex-direction: column;
+    margin: 15px 0px 10px 0px;
+}
+.pageNumber
+{
+    font-weight: bold;
+    font-size: medium;
+}
+.filePagePreviewed
+{
+    border: 1px solid black;
+    box-shadow: 1.5px 1.5px 2px black;
+    border-radius: 15px;
+    margin-bottom: 5px;
+    width: 165px;
+    height: 190px;
+    transition: transform .5s;
+}
+.video-file
+{
+    width: 450px;
+    height: 450px;
+}
+#addPagesToDeckbtn
+{
+    margin-left: 1.5px;
+    width: 50px;
+    height: 240px;
+    border-radius: 10px;
+    background-color: rgb(185, 108, 14);
+}
+#collection-tags-Parent
+{
+    margin-top: 30px;
+    display: grid;
+    grid-template-columns: repeat(2, auto);
+    justify-items: center;
+    width: 1050px;
+}
+.deckGridContainers
+{
+    height: 500px;
+    border-radius: 15px;
+}
+#deckContainer
+{
+    width: 750px;
+    border: 7px solid rgb(185, 108, 14);
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    justify-items: center;
+    overflow-y: auto;
+}
+/* works on firfeox */
+#deckContainer
+{
+    scrollbar-width: thin;
+    scrollbar-color: rgb(185, 108, 14) white;
+}
+/* supported in chrome, edge, safari only */
+#deckContainer::-webkit-scrollbar
+{
+    width: 11px;
+} 
+#deckContainer::-webkit-scrollbar-track
+{
+    border: 2px solid aliceblue;
+    border-radius: 16px;
+    background-color: grey;
+}
+#deckContainer::-webkit-scrollbar-thumb
+{
+    width: 11px;
+    background-color: white;
+    border-radius: 15px;
+    border: 1px solid black;
+}
+.wholeSlideContainer
+{
+    position: relative;
+    width: 160px;
+    height: 217px;
+}
+.deckItem
+{
+    position: absolute;
+    top: 0;
+}
+.deckLowerItem
+{
+    right: 0;
+}
+.cancelContainer
+{   
+    display: flex;
+    flex-direction: row-reverse;
+    width: 100%;
+    margin: 7px 0px 0px 8px;
+}
+#tagsContainer
+{
+    width: 250px;
+    border: 7px solid lightgrey;
+    padding-top: 15px;
+}
+#tagInput
+{
+    border: 2px solid rgb(185, 108, 14);
+}
+.cancelBtn
+{
+    display: flex;
+    flex-direction: column;
+    background-color: white;
+    border-radius: 6px;
+    border: 2px solid red;
+    box-shadow: 1px 1px 5px red;
+    width: 20px;
+    height: 20px;
+    opacity: 90%;
+}
+.cancelImg
+{
+    padding: 1.5px;
+    width: 98%;
+    height: 98%;
+    opacity: 80%;
+}

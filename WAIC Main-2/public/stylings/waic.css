@@ -1,0 +1,377 @@
+#root-container
+{
+    padding-left: 0px !important;
+    padding-right: 0px !important;
+    background-color: rgb(220, 240, 255);
+    background-image: linear-gradient(to left, aliceblue, rgba(217, 228, 238, 0.5));
+}
+.pageContainer
+{
+    min-height: 1200px;
+    min-width: 1300px;
+}
+.previewHeading
+{
+    color: white !important;
+    padding: 15px 0px 0px 0px;
+}
+.selectionHeading
+{
+    color: white !important;
+    padding: 0px;
+}
+#top-navbar
+{
+    border-radius: 10px;
+    background-color: #43acb7;
+    border: 2px solid black;
+    box-shadow: 0px 2px 5px grey;
+}
+#left-nav-items
+{
+    padding-left: 50px;
+    display: inline;
+    float: left;
+}
+
+#right-nav-items
+{
+    display: inline;
+    float: right !important;
+    margin-right: 10px !important;
+}
+
+.account-icon-div
+{
+    text-align: center;
+    background-color: white;
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    margin: 8px 15px 5px 5px;
+}
+
+.account-icon-img
+{
+    opacity: 50%;
+    border-radius: 50%;
+    margin-top: 5px;
+    width: 60%;
+    height: 67%;
+}       
+
+.left-icon-img
+{
+    border: 1px solid lightgray;
+    margin-top: 6px;
+    border-radius: 50%;
+    height: 36px;
+}
+
+#search-item
+{
+    padding: 16px 0px 0px 15px;
+}
+#search-bar-1
+{
+    width: 250px;
+    height: 22px;
+    border-radius: 10px;
+    background-color: white;
+    border: 1px solid black;
+}
+.search-image, .search-image-2
+{
+    transform: rotate(7deg);
+    margin: 0px 5px 2px 4px;
+    width: 19px;
+    height: 16px;
+}
+
+#search-field-1
+{
+    border-radius: 10px;
+    width: 220px;
+    border: none;
+    height: 18px;
+    /* hide border when search field is clicked */
+    outline: none;
+}
+.dropdownBtn
+{
+    margin-left: 2px;
+    padding: 0px 0px 1px 6px;
+    opacity: 50%;
+    width: 17px;
+    height: 7px;
+}
+#fileType-tag-container
+{
+    margin-top: 120px;
+}
+.dropdowns
+{
+    padding: 0px 0px 1px 6px;
+    margin: 15px 7px 0px 0px;
+    float: right;
+    opacity: 50%;
+    width: 17px;
+    height: 7px;
+}
+/* hide bullets */
+li
+{
+    list-style: none;
+}
+.slide-name
+{
+    text-align: center;
+    font-weight: bold;
+    width: 98%;
+    height: 22%;
+    padding-top: 9px;
+    height: 18%;
+    font-size: 20px;
+    /* font-size: 35px; */
+}
+.the-pdf
+{
+    border: 1px solid black;
+    box-shadow: 2px 3px 5px black;
+    border-radius: 25px;
+    width: 100%;
+    height: 80.6%;
+}
+.scaling
+{
+    overflow: visible;
+}
+.collectionItem
+{
+    /* border: 1px solid black;
+    box-shadow: 1px 1px 1px black;
+    border-radius: 10px;
+    margin-bottom: 10px;
+    background-color: rgba(128, 128, 128, 0.644); */
+    width: 170px;
+    height: 190px;
+    margin-bottom: 5px;
+}
+.result-file
+{
+    border-radius: 10px;
+    border: 1px solid black;
+    width: 100%;
+    height: 95%;
+}
+.result-file-name
+{
+    text-align: center;
+    font-size: medium !important;
+    font-weight: bold;
+    width: 99%;
+    height: 4%;
+}
+.collectionItem
+{
+    margin: 8px 20px 0px 10px;
+    text-align: center;
+}
+#theCollection
+{
+    border: 2px solid grey;
+    box-shadow: 2px 2px 5px grey;
+    overflow-x: auto !important;
+    display: grid;
+    /* This line needs t be changed 
+    this property is to be set according to the search results */
+    grid-template-columns: repeat(100, 1fr);
+    justify-items: start;
+    border-radius: 15px;
+    width: 800px;
+    height: 250px;
+    padding: 15px 0px 0px 10px;
+}
+/* works on firfeox */
+#theCollection
+{
+    scrollbar-width: thin;
+    scrollbar-color: rgba(0, 0, 0, 0.400) white;
+}
+/* supported in chrome, edge, safari only */
+ #theCollection::-webkit-scrollbar
+{
+    height: 11px;
+} 
+#theCollection::-webkit-scrollbar-track
+{
+    /* make this the same colour as the container */
+    border: 3px solid aliceblue;
+    border-radius: 16px;
+    background-color: rgba(0, 0, 0, 0.6);
+}
+#theCollection::-webkit-scrollbar-thumb
+{
+    height: 11px;
+    background-color: white;
+    border-radius: 15px;
+    border: 1px solid black;
+}
+
+.collectionName
+{
+    margin-bottom: 25px;
+    display: grid;
+    grid-template-columns: auto auto auto;
+    justify-items: center;
+    align-content: center;
+    height: 50px;
+    width: 420px;
+}
+.leftarrow, .rightarrow
+{
+    color: grey;
+    font-size: 39px;
+    width: 45px;
+    height: 90%;
+}
+.save-collection-btn
+{
+    background-color: gray;
+    color: whitesmoke;
+    border-radius: 15px !important;
+    margin: 15px 0px 0px 0px;
+    transition: transform .4s;
+}
+.save-collection
+{
+    font-weight: bold !important;
+    background-color: lightskyblue;
+    color: whitesmoke;
+    border-radius: 10px !important;
+    margin: 30px 0px 0px 0px;
+    transition: transform .4s;
+}
+.save-collection-btn:hover, .save-collection:hover
+{
+    transform: scale(1.1);
+}
+
+#contentPreviewer
+{
+    /* overflow-y: scroll; */
+    width: 870px;
+    height: 630px;
+    background-color: rgba(0, 0, 0, 0.450);
+    border-radius: 20px;
+}
+#previewDiv
+{
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    height: 550px;
+}
+.prevContainer
+{
+    width: 49.5%;
+    height: 100%;
+}
+.pageView
+{
+    background-color: white;
+    border-radius: 20px;
+    width: 96%;
+    height: 35%;
+    margin-bottom: 10px;
+}
+#pages
+{
+    margin-bottom: 3px;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    justify-items: center;
+    align-content: space-around;
+    width: 100%;
+    height: 56.5%;
+}
+.filePage, .filePage-1
+{
+    border-radius: 15px;
+    margin: 20px 0px 20px 0px;
+    width: 170px;
+    height: 180px;
+}
+#selectionContainer
+{
+    margin: 1px;
+    height: 73.4%;
+    border: 3px solid blanchedalmond;
+}
+#orderPreview
+{
+    border-radius: 25px;
+    margin-top: 20px;
+    background-color: white;
+    width: 95%;
+    height: 45%;
+}
+#pagesOrder
+{
+    width: 93.5%;
+    margin-top: 12px;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    height: 30%;
+}
+#advanced-filtering
+{
+    margin-left: 8px;
+    float: left;
+    width: 50%;
+    font-size: large;
+}
+#filter-link
+{
+    color: black;
+}
+#select-all-box
+{
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: flex-start;
+    width: 48%;
+    float: right;
+}
+#select-all
+{
+    width: 25px;
+    height: 25px;
+}
+#select-all-label, #filter-link
+{
+    font-size: 20px;
+    font-weight: 420;
+}
+.selected
+{
+    display: grid;
+    grid-template-rows: 23fr 1fr; 
+    border-radius: 15px;
+    border: 3px solid lightblue;
+    box-shadow: 1px 1px 3px lightblue;
+    transform: scale(1.2);
+}
+#pagesPreview
+{
+    margin-bottom: 50px;
+    background-color: lightgrey;
+    width: 700px;
+    height: 600px;
+    display: grid;
+    grid-template-columns: repeat(3,auto);
+    justify-items: center;
+    overflow-y: scroll;
+}
+
