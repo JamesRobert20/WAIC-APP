@@ -1,0 +1,6 @@
+POST http://localhost:3001/api/create
+Content-Type: application/json
+
+{
+  "bruh": "bruh"
+}

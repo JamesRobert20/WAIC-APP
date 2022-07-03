@@ -1,0 +1,16 @@
+POST http://localhost:3001/api/collections
+Content-Type: application/json
+
+{
+  "collectionName": "lol",
+  "collectionFiles": [
+  {
+    "fileName": "UnessayRubricTemplate.pdf",
+    "pages": [2]
+  },
+  {
+    "fileName": "CPSC233W22ProjectDemo3.pdf",
+    "pages": [1,2]
+  }
+]
+}

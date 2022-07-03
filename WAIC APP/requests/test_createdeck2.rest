@@ -1,0 +1,24 @@
+POST http://localhost:3001/api/decks
+Content-Type: application/json
+
+{
+  "deckName": "w1",
+  "deckPages": [
+    {
+      "file": "WAIC.pdf",
+      "pages": [3]
+    },
+    {
+      "file": "Tutorial10.pdf",
+      "pages": [1,3]
+    },
+    {
+      "file": "Armv8-A-Instruction-Set-Architecture.pdf",
+      "pages": [1]
+    },
+    {
+      "file": "SoTL & Sexual Assault - TI Grant Application (02.07.18).pdf",
+      "pages": [2,4]
+    }
+  ]
+}

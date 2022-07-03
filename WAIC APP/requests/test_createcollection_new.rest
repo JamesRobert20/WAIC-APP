@@ -1,0 +1,45 @@
+POST http://localhost:3001/api/collections
+Content-Type: application/json
+
+{
+  "name": "xy",
+  "files": [
+    {
+      "fileName": "x",
+      "exportAs": ".pdf",
+      "fileContents": [
+        {
+          "fileFrom": "tucomanca.pdf",
+          "pageNumber": "1",
+          "imageData": ""
+        },
+          {
+          "fileFrom": "UnessayRubricTemplate.pdf",
+          "pageNumber": "2",
+          "imageData": ""
+        },
+        {
+          "fileFrom": "fake slides.pdf",
+          "pageNumber": "4",
+          "imageData": ""
+        }
+      ]
+    },
+    {
+      "fileName": "y",
+      "exportAs": ".pdf",
+      "fileContents": [
+        {
+          "fileFrom": "SoTL & Sexual Assault - TI Grant Application (02.07.18).pdf",
+          "pageNumber": "1",
+          "imageData": ""
+        },
+        {
+          "fileFrom": "Tutorial10.pdf",
+          "pageNumber": "1",
+          "imageData": ""
+        }
+      ]
+    }
+  ]
+}

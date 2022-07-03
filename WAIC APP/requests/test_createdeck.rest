@@ -1,0 +1,20 @@
+POST http://localhost:3001/api/decks
+Content-Type: application/json
+
+{
+  "deckName": "myDeck",
+  "deckPages": [
+    {
+      "file": "fake slides.pdf",
+      "pages": [1,4]
+    },
+    {
+      "file": "Tutorial10.pdf",
+      "pages": [4,6]
+    },
+    {
+      "file": "UnessayRubricTemplate.pdf",
+      "pages": [1]
+    }
+  ]
+}
