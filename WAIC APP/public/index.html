@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html>
+    <head>
+
+        <meta charset="utf-8">
+        <title>My Library</title>
+
+        <!-- Styling sheets  -->
+        <link rel="stylesheet" href="stylings/fileSelection.css">
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
+        
+        <!-- importing d3.js, bootstrap and jquery scripts -->
+        <script src="https://d3js.org/d3.v6.min.js"></script>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+        <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.13.0/jquery-ui.min.js" type="text/javascript"></script>
+        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.2.228/pdf.min.js"></script>
+        
+        <!-- Importing the powerpoint generator library-->
+        <script src="PptxGenJS-3.10.0/dist/pptxgen.bundle.js"></script>
+        <script src="PptxGenJS-3.10.0/libs/jszip.min.js"></script>
+        <script src="PptxGenJS-3.10.0/dist/pptxgen.min.js"></script>
+        
+        <!-- importing the event handler script -->
+        <script src="scripts/handleSelectionsPage.js"></script>
+    </head>
+
+    <body>
+        <div id="load-wrapper">
+            <div id="the-loader"></div>
+        </div>
+        <div id="root-container" class="pageContainer container-fluid loading-opacity">
+            <center>
+                <div id="fileSelectionGrids">
+                    <div id="allFilesGridView" class="fileSelectionGrids-item">
+                        <h2 class="gridHeading">All Files</h2>
+                        <div id="search-bar-2">
+                            <img src="./images/search-icon.jpg" class="search-image-2">
+                            <input id="search-field-2" type="text" name="searchContextInner" placeholder="Search" />
+                        </div>
+                        <div id="search-tags-container">
+                            <!-- <select id="location-tag" class="search-tags">
+                                <option class="tag-names" selected>Location</option>
+                            </select> -->
+                            <select id="fileType-tag" class="search-tags">
+                                <option class="tag-names" selected>File Type</option>
+                                <option class="tag-names">pdf(.pdf)</option>
+                                <option class="tag-names">powerpoint(.pptx)</option>
+                                <option class="tag-names">word(.docx)</option>
+                                <option class="tag-names">text file(.txt)</option>
+                                <option class="tag-names">video file(.mp4)</option>
+                                <option class="tag-names">image file(.jpg/png)</option>
+                            </select>
+                            <select id="lastMod-tag" class="search-tags">
+                                <option class="tag-names" selected>Last Modified</option>
+                                <option class="tag-names">within the last day</option>
+                                <option class="tag-names">within the last week</option>
+                                <option class="tag-names">within the last month</option>
+                                <option class="tag-names">within the last 6 months</option>
+                                <option class="tag-names">within the last year</option>
+                            </select>
+                            <!-- <select id="title-tag" class="search-tags">
+                                <option class="tag-names" selected>Tags</option>
+                            </select> -->
+                        </div>
+                        <div id="filesListGrid"></div>
+                    </div>
+                    <div id="filePreviewContainer" class="fileSelectionGrids-item">
+                        <div id="filePreviewGrid"></div>
+                        <div id="filePreviewNavBar">
+                            <label for="select-all-pages" id="select-all-pages-label" style="display: none">Select All:</label>
+                            <input id="select-all-pages" type="checkbox" style="display: none">
+                        </div> 
+                    </div>                   
+                    <button id="addPagesToDeckbtn">
+                        A<br>d<br>d<br><br>t<br>o<br><br>D<br>e<br>c<br>k
+                    </button>
+                </div>
+                <div id="collection-tags-Parent">
+                    <div id="deckName-Container" class="deckGridHeadings">
+                        <img id="pencil-edit" title="Edit Name" src="images/pencil.png">
+                        <img id="done-edit" src="images/done.png" style="display: none">
+                        <h2 id="deckName-written">My New Collection</h2>
+                        <input id="deckName" value="My New Collection" style="display: none">
+                    </div>
+                    <h2 id="add-tags-heading" class="deckGridHeadings" style="opacity: 0; pointer-events: none;">Add Tags</h2>
+                    <div id="deckContainer" class="deckGridContainers">
+                        <div id="package-navbar">
+                            <div title="Undo" class="undo-button collectionContainerbBtns inactive" style="display: none">
+                                <img title="Undo" width="23px" src="images/undo.png">
+                            </div>
+                            <button id="add-to-workspace" class="collectionContainerbBtns decks-change-button">Add to workspace</button>
+                            <img title="Back to Full List" src="images/back.png" id="backButton" class="back-button collectionContainerbBtns" style="display: none">
+                            <button id="split-to-decks" class="collectionContainerbBtns decks-change-button" style="display: none">Filter by file types</button>
+                            <button id="create-new-workspace" class="collectionContainerbBtns decks-change-button" style="display: none">Create new workspace</button>
+                            <button id="revert-to-original" class="collectionContainerbBtns decks-change-button" style="display: none">Revert to original</button>
+                            <select id="select-number-of-decks" class="collectionContainerbBtns" style="display: none">
+                                <option class="decks-options" selected>Full list</option>
+                                <option class="decks-options">1 deck</option>
+                                <option class="decks-options">2 decks</option>
+                                <option class="decks-options">3 decks</option>
+                            </select>
+                            <label id="viewMode-label" for="select-number-of-decks" style="display: none">View mode:</label>
+                        </div>
+                        <div id="collectionViewer"></div>
+                        <div id="innerDecksViewer" style="display: none">
+                            <div id="workspace-1" class="workspace">
+                                <div id="full-mode" class="workspace-1-modes"></div>
+                                <div id="single-mode" class="workspace-viewers" style="display: none"></div>
+                            </div>
+                            <div id="workspace-2" class="workspace-viewers workspace two-view" style="display: none"></div>
+                            <div id="workspace-3" class="workspace-viewers workspace two-view" style="display: none"></div>
+                            <div id="workspace-4" class="workspace-viewers workspace three-view" style="display: none"></div>
+                        </div>
+                    </div>
+                    <div id="tagsContainer" class="deckGridContainers invisible" style="opacity: 0;">
+                        <input id="tagInput" class="inactive" placeholder="Type a tag name to add">
+                    </div>
+                    <div>
+                        <button id="save-collection" class="collection-post-btns">Save Collection</button>
+                        <button id="download-collection" class="collection-post-btns">Download Collection</button>
+                    </div> 
+                </div>
+            </center>
+        </div>
+    </body>
+</html>

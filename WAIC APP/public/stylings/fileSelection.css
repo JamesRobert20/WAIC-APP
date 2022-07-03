@@ -1,0 +1,777 @@
+#root-container
+{
+    padding-left: 0px !important;
+    padding-right: 0px !important;
+    background-color: white;
+}
+.search-image, .search-image-2
+{
+    transform: rotate(7deg);
+    margin: 0px 5px 2px 4px;
+    width: 19px;
+    height: 16px;
+}
+.gridHeading
+{
+    margin: 0px;
+    /* This is the colour gradient customization 
+    background-image: linear-gradient(240deg, black, rgb(206, 138, 13));
+    background-size: 100%;
+    -webkit-background-clip: text;
+    -moz-background-clip: text;
+    -webkit-text-fill-color: transparent; 
+    -moz-text-fill-color: transparent;
+    */
+    color: green;
+}
+#search-bar-2
+{
+    text-align: left;
+    width: 350px;
+    height: 30px;
+    border-radius: 10px;
+    border: 2px solid rgb(58, 149, 233);
+    background-color: white;
+}
+.search-image-2
+{
+    opacity: 75%;
+    width: 24px;
+    height: 22px;
+}
+#search-field-2
+{
+    border-right: 1px solid white !important;
+    background-color: white !important;  
+    width: 200px;
+    border: none;
+    height: 98.5%;
+    /* hide border when search field is clicked */
+    outline: none;
+}
+#search-tags-container
+{
+    display: flex;
+    flex-direction: row;
+    justify-content: space-around;
+    align-items: center;
+    margin-top: 5px;
+    margin-bottom: 5px;
+    width: 402px;
+    height: 35px;
+}
+.search-tags
+{
+    text-align: center;
+    border: 2px solid rgb(58, 149, 233);
+    border-radius: 10px;
+    background-color: white;
+    width: 150px;
+    height: 30px;
+    font-size: medium;
+    font-weight: bold;
+    color: green;
+}
+.tag-names
+{
+    text-align: center;
+    color: rgb(58, 149, 233);
+    font-size: medium;
+    font-weight: bold;
+    height: 20px;
+    
+}
+#fileSelectionGrids
+{
+    margin-top: 25px;
+    width: 1280px;
+    height: 530px;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-around;
+}
+.fileSelectionGrids-item
+{
+    flex-basis: 48%;
+}
+#filesListGrid
+{
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    justify-items: center;
+    width: 92%;
+    height: 390px;
+    border: 5px solid rgb(58, 149, 233);
+    box-shadow: 0px 3px 10px rgb(58, 149, 233);
+    border-radius: 10px;
+    overflow-y: auto;
+}
+/* works on firfeox */
+#filesListGrid
+{
+    scrollbar-width: thin;
+    scrollbar-color: rgb(58, 149, 233) white;
+}
+/* supported in chrome, edge, safari only */
+#filesListGrid::-webkit-scrollbar
+{
+    width: 11px;
+} 
+#filesListGrid::-webkit-scrollbar-track
+{
+    border: 2px solid white;
+    border-radius: 16px;
+    background-color: grey;
+}
+#filesListGrid::-webkit-scrollbar-thumb
+{
+    width: 11px;
+    background-color: white;
+    border-radius: 15px;
+    border: 1px solid black;
+}
+.search-result
+{
+    width: 150px;
+    height: 190px;
+    margin: 20px 0px 0px 0px;
+}
+.result-file
+{
+    border-radius: 10px;
+    border: 1px solid black;
+    width: 100%;
+    height: 88%;
+}
+.result-file-name
+{
+    text-align: center;
+    font-size: medium !important;
+    font-weight: bold;
+    width: 99%;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
+}
+.fileOnDisplay
+{
+    display: grid;
+    grid-template-columns: repeat(3,1fr);
+    justify-items: center;
+    overflow-y: auto;
+}
+.videoOnDisplay, .imageOnDisplay
+{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+#filePreviewContainer
+{
+    flex-basis: 52% !important;
+    box-shadow: 0px 3px 10px rgb(58, 149, 233);
+    border: 7px solid rgb(58, 149, 233);
+    border-radius: 15px;
+}
+#filePreviewGrid
+{
+    padding: 10px 0 0 5px;
+    height: 93%;
+}
+#filePreviewNavBar
+{
+    border: 2px solid rgb(58, 149, 233);
+    height: 6.8%;
+    width: 99.5%;
+    border-radius: 5px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+}
+#select-all-pages
+{
+    width: 20px;
+    height: 20px;
+    margin-top: -3px;
+}
+#select-all-pages-label
+{
+    font-size: large;
+    color: green;
+}
+/* works on firfeox */
+#filePreviewGrid
+{
+    scrollbar-width: thin;
+    scrollbar-color: rgb(58, 149, 233) white;
+}
+/* supported in chrome, edge, safari only */
+#filePreviewGrid::-webkit-scrollbar
+{
+    width: 11px;
+} 
+#filePreviewGrid::-webkit-scrollbar-track
+{
+    border: 2px solid aliceblue;
+    border-radius: 16px;
+    background-color: grey;
+}
+#filePreviewGrid::-webkit-scrollbar-thumb
+{
+    width: 11px;
+    background-color: white;
+    border-radius: 15px;
+    border: 1px solid black;
+}
+.fileSelected, .pageSelected
+{
+    border-radius: 15px;
+    border: 3px solid red !important;
+    box-shadow: 2px 2px 3px red !important;
+    transform: scale(1.05);
+}
+.pageDisplayItem, .pageDisplayItem-2
+{
+    display: flex;
+    flex-direction: column;
+    margin: 13px 0px 8px 0px;
+    transition: transform .3s linear;
+    align-items: center;
+}
+.pageDisplayItem:hover
+{
+    transform: scale(1.2);
+}
+.pageNumber
+{
+    width: 80px;
+    font-weight: bold;
+    font-size: medium;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+.mediumPageNumber
+{
+    width: 70px;
+}
+.smallPageNumber
+{
+    width: 53px;
+}
+.two-view
+{
+    width: 533px;
+}
+.two-view-display
+{
+    display: grid;
+    grid-template: repeat(500, auto) / repeat(6, auto);
+    overflow-y: auto;
+    padding-left: 14px;
+}
+.three-view
+{
+    width: 355px;
+}
+.three-view-display
+{
+    display: grid;
+    grid-template: repeat(500, auto) / repeat(5, auto);
+    overflow-y: auto;
+    padding-left: 10px;
+}
+.wholeSlideContainer, .wholeSlideContainer-1, .wholeSlideContainer-2, .wholeSlideContainer-3
+{
+    position: relative;
+    cursor: pointer;
+}
+.wholeSlideContainer
+{
+    width: 85px;
+    height: 110px;
+    margin-bottom: 20px;
+}
+.wholeSlideContainer-1
+{
+    width: 80px;
+    height: 100px;
+    margin-bottom: 18px;
+}
+.wholeSlideContainer-2
+{
+    width: 75px;
+    height: 95px;
+    margin-bottom: 22px;
+}
+.wholeSlideContainer-3
+{
+    width: 50px;
+    height: 65px;
+    margin-bottom: 22.5px;
+}
+.deckItem
+{
+    position: absolute;
+    top: 0;
+}
+.deckLowerItem
+{
+    right: 0;
+}
+.cancelContainer
+{   
+    display: flex;
+    flex-direction: row-reverse;
+    width: 100%;
+    margin: 7px 0px 0px 8px;
+}
+.filePagePreviewed, .filePagePreviewed_1, .filePagePreviewed-1, .filePagePreviewed-2, .filePagePreviewed-3
+{
+    border: 1px solid black;
+    box-shadow: 1.5px 1.5px 2px black;
+    border-radius: 10%;
+    margin-bottom: 5px;
+}
+.filePagePreviewed
+{
+    width: 163px;
+    height: 185px;
+}
+.filePagePreviewed_1
+{
+    width: 87px;
+    height: 100px;
+}
+.filePagePreviewed-1
+{
+    margin-bottom: 0px;
+    width: 82px;
+    height: 90px;
+}
+.filePagePreviewed-2
+{
+    width: 75px;
+    height: 82px;
+}
+.filePagePreviewed-3
+{
+    width: 50px;
+    height: 57px;
+}
+.video-file
+{
+    width: 450px;
+    height: 450px;
+}
+#addPagesToDeckbtn
+{
+    color: purple;
+    font-weight: bold;
+    margin-left: 1.5px;
+    width: 50px;
+    height: 240px;
+    border-radius: 10px;
+    background-color: white;
+    border: 3px solid rgb(58, 149, 233);
+    box-shadow: 2px 2px 4px rgb(58, 149, 233);
+}
+.pressed
+{
+    transition: transform .1s;
+    transform: scale(0.96) !important;
+}
+#collection-tags-Parent
+{
+    margin-top: 30px;
+    display: grid;
+    grid-template-columns: repeat(2, auto);
+    justify-items: center;
+    width: 1300px;
+}
+.deckGridContainers
+{
+    height: 500px;
+    border-radius: 15px;
+}
+.deckGridHeadings
+{
+    color: green;
+}
+#deckName-Container
+{
+    display: flex;
+    flex-direction: row-reverse;
+    align-items: center;
+}
+#deckName, .workspace-name
+{
+    font-size: x-large;
+    color: green;
+    text-align: center;
+    border-color: green;
+    border-radius: 5px;
+    width: 250px;
+}
+#deckName-written, .workspace-name-written
+{
+    color: green;
+    margin-right: 10px;
+}
+#pencil-edit, .pencil-edit
+{
+    height: 19px;
+    border-radius: 5px;
+    border: 1px solid green;
+}
+.pencil-edit
+{
+    margin-right: 35px;
+}
+#done-edit, .done-edit
+{
+    margin-left: 1px;
+    border: 1px solid green;
+    height: 40px;
+    border-radius: 5px;
+}
+#done-edit:hover, #pencil-edit:hover, .done-edit:hover, .pencil-edit:hover, .undo-button:hover
+{
+    cursor: pointer;
+    transform: scale(1.01);
+    box-shadow: 1px 1px 3px green;
+}
+.undo-button, .back-button
+{
+    width: 25px;
+    margin-right: 20px;
+    border-radius: 5px;
+}
+.invisible
+{
+    pointer-events: none;
+    width: 100px !important;
+}
+.inactive
+{
+    opacity: 0.4;
+    pointer-events: none;
+    box-shadow: none !important;
+}
+#package-navbar
+{
+    width: 100%;
+    height: 8.5%;
+    border-bottom: 3px solid rgb(58, 149, 233);
+    border-radius: 7px 7px 5px 5px;
+    display: flex;
+    flex-direction: row-reverse;
+    align-items: center;
+}
+.collectionContainerbBtns
+{
+    border: 1px solid rgb(58, 149, 233);
+    border-radius: 5px;
+    height: 75%;
+    color: green;
+    box-shadow: 1px 1px 2px rgb(58, 149, 233);
+}
+.save-deck
+{
+    margin-right: 25px;
+}
+#innerDecksViewer
+{
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+    height: 91%;
+}
+.upperWSContainer
+{
+    width: 150px;
+    height: 190px;
+    position: relative;
+    margin-top: 16.5px;
+}
+.theFormats, .theWorkspaces
+{
+    right: 0;
+    font-size: 25px;
+    text-align: center;
+    width: 150px;
+    height: 190px;
+    background-color: rgba(97, 36, 97, 0.72);
+    border-radius: 5px;
+    border: 1px solid black;
+    box-shadow: 3px 3px 5px black;
+}
+#viewMode-label
+{
+    font-size: large;
+    margin-top: 5px;
+}
+#select-number-of-decks
+{
+    margin-left: 4px;
+}
+.decks-change-button
+{
+    margin: 0px 5px 0px 10px;
+}
+
+#deckContainer
+{
+    margin-left: 60px;
+    width: 1080px;
+    border: 7px solid rgb(58, 149, 233);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+#collectionViewer
+{
+    display: grid;
+    grid-template-columns: repeat(10, 1fr);
+    grid-template-rows: repeat(10000, auto);
+    justify-items: center;
+    width: 100%;
+    height: 91%;
+    /* border: 2px solid black; */
+    border-radius: 5px 5px 7px 7px;
+    overflow-y: auto;
+}
+/* works on firfeox */
+#collectionViewer
+{
+    scrollbar-width: thin;
+    scrollbar-color: rgb(58, 149, 233) white;
+}
+/* supported in chrome, edge, safari only */
+#collectionViewer::-webkit-scrollbar
+{
+    width: 11px;
+} 
+#collectionViewer::-webkit-scrollbar-track
+{
+    border: 2px solid aliceblue;
+    border-radius: 16px;
+    background-color: grey;
+}
+#collectionViewer::-webkit-scrollbar-thumb
+{
+    width: 11px;
+    background-color: white;
+    border-radius: 15px;
+    border: 1px solid black;
+}
+#full-mode
+{
+    height: 98%;
+    padding-bottom: 25px;
+}
+#workspace-1
+{
+    width: 100%;
+}
+.workspace-1-modes, .single-file-mode
+{
+    padding: 10px 0px 0px 20px;
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    grid-template-rows: repeat(10000, auto);
+    overflow-y: auto;
+}
+.single-file-mode
+{
+    padding-top: 0px;
+    grid-template-columns: repeat(10, 1fr);
+    grid-template-rows: repeat(10000, auto);
+}
+.workspace-viewers
+{
+    height: 100%;
+    padding-top: 2px;
+}
+.workspace-namer
+{
+    display: flex;
+    flex-direction: row-reverse;
+    align-items: center;
+    justify-content: center;
+    height: 9%;
+}
+.workspace-displayer
+{
+    height: 81%;
+}
+/* works on firfeox */
+.workspace-displayer
+{
+    scrollbar-width: thin;
+    scrollbar-color: rgb(58, 149, 233) white;
+}
+/* supported in chrome, edge, safari only */
+.workspace-displayer::-webkit-scrollbar
+{
+    width: 11px;
+} 
+.workspace-displayer::-webkit-scrollbar-track
+{
+    border: 2px solid aliceblue;
+    border-radius: 16px;
+    background-color: grey;
+}
+.workspace-displayer::-webkit-scrollbar-thumb
+{
+    width: 11px;
+    background-color: white;
+    border-radius: 15px;
+    border: 1px solid black;
+}
+.workspace-bottom-navbar
+{
+    padding: 5px 0px 0px 5px;
+    border-radius: 5px 5px 0px 0px;
+    border: 2px solid grey;
+    height: 10%;
+    display: flex;
+    flex-direction: row;
+}
+.workspace
+{
+    height: 100%;
+    border-right: 3px solid black;
+}
+#workspace-4
+{
+    border: none;
+}
+#deck-to-view-1
+{
+    margin-right: 50px;
+}
+.minimised-width
+{
+    width: 50px;
+}
+.minimised-mode-spacing
+{
+    margin-right: 30px;
+}
+.regular-mode-spacing
+{
+    margin-right: 50px;
+}
+#tagsContainer
+{
+    width: 200px;
+    border: 7px solid lightgrey;
+    padding-top: 15px;
+}
+#tagInput
+{
+    border: 2px solid rgb(58, 149, 233);
+    width: 90%;
+    border-radius: 5px;
+}
+.temporarily-hidden, .permanently-hidden
+{
+    display: none;
+}
+.cancelBtn, .removeDeck
+{
+    display: flex;
+    flex-direction: column;
+    background-color: white;
+    border-radius: 6px;
+    border: 2px solid red;
+    box-shadow: 1px 1px 5px red;
+    width: 20px;
+    height: 20px;
+    opacity: 90%;
+}
+.removeDeck, .theWorkspaces
+{
+    position: absolute;
+    top: 0;
+}
+.removeDeck
+{
+    margin-top: -5px;
+    cursor: pointer;
+}
+.cancelBtn-scaled
+{
+    transform: scale(0.8);
+}
+.cancelImg
+{
+    padding: 1.5px;
+    width: 98%;
+    height: 98%;
+    opacity: 80%;
+}
+.canvases-to-remove
+{
+    border-radius: 1px;
+}
+#load-wrapper
+{
+    top: 0;
+    left: 0;
+    position: absolute;
+    width: 100%;
+    height: 1300px;
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    z-index: 999;
+}
+#the-loader
+{
+    display: flex;
+    justify-content: center;
+    margin-top: -350px;
+}
+#the-loader::after
+{
+    content: "";
+    width: 400px;
+    height: 400px;
+    border: 40px solid antiquewhite;
+    border-top-color: rgb(58, 149, 233);
+    border-bottom-color: rgb(58, 149, 233);
+    /* border-top-color: rgb(64, 86, 86); */
+    border-radius: 50%;
+    animation: loading 2.5s linear infinite;
+}
+.loading-opacity
+{
+    opacity: 0.4;
+}
+@keyframes loading
+{
+    to
+    {
+        transform: rotate(1turn);
+    }
+}
+.collection-post-btns
+{
+    width: 90px;
+    height: 50px;
+    border-radius: 8px;
+    border: 3px solid rgb(58, 149, 233);
+    box-shadow: 2px 2px 4px rgb(58, 149, 233);
+    margin: 15px;
+    color: rebeccapurple;
+    font-weight: bold;
+}
+.collection-post-btns:hover, #addPagesToDeckbtn:hover, .collectionContainerbBtns:hover
+{
+    transform: scale(1.01);
+    box-shadow: 3px 3px 5px green;
+}
