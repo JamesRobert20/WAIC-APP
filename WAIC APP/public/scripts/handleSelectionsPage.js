@@ -2,6 +2,8 @@ function mainThread(originalArray, filesArray, fileMasker)
 {
     var filePromises = [];
     var PDF_DOC, TOTAL_PAGES, matcher;
+    var firstTimeGalleryView = true;
+    var scrollAmount;
    
     var fileMasker_1 = {};
 
@@ -21,14 +23,14 @@ function mainThread(originalArray, filesArray, fileMasker)
         $("#filesListGrid").append(
             $("<div></div>").attr({"id": "result-" + (index+1), "class": "search-result"}).append(
                 $("<div></div>").attr({"id": "file-"+(index+1), "class": "result-file"}),
-                $("<div></div>").attr({"class": "result-file-name"}).text(item)
+                $("<div></div>").attr({"class": "result-file-name"}).text(item.substring(0,item.indexOf(theExtension)-1))
             )
         );
 
         if( theExtension == "pdf")
         {
             $("#cover-pages-container").append(
-                $("<canvas></canvas>").attr({"id": "cover-page-"+(index+1), "class": item, "width": "420"}).css("display","none")
+                $("<canvas></canvas>").attr({"id": "cover-page-"+(index+1), "class": "mask_"+index, "width": "420"}).css("display","none")
             );
             displayFiles(item, index, item.substring(0, item.indexOf(theExtension) - 1), theExtension, "#cover-page-"+(index+1));
         }
@@ -52,7 +54,7 @@ function mainThread(originalArray, filesArray, fileMasker)
 
                 $(fileID).attr("src", chldrn[jk].toDataURL("image/png"));
                 
-                var masker = Object.keys(fileMasker).find(key => fileMasker[key] === chldrn[jk].getAttribute("class"));
+                var masker = chldrn[jk].getAttribute("class");
 
                 filesArray[masker].push(chldrn[jk].toDataURL("image/png"));
             }
@@ -86,26 +88,75 @@ function mainThread(originalArray, filesArray, fileMasker)
     /* ... Function that handles when undo is pressed in a workspace ... */
     function workspaceUndo()
     {
-        $(".temporarily-hidden").addClass("permanently-hidden");
-        $(".permanently-hidden").removeClass("temporarily-hidden");
+        var theWorkspaceDisplay = $(this).parent().parent().parent();
+        if(theWorkspaceDisplay.hasClass("theReceiver"))
+            $(".theGiver").prev().find(".undo-button").addClass("inactive");
+        else if(theWorkspaceDisplay.hasClass("theGiver"))
+            if((wpActions[$(".theReceiver").parent().attr("id")] != null) && wpActions[$(".theReceiver").parent().attr("id")].undoFrom == "sorting-external")
+                if(wpActions[$(".theReceiver").parent().attr("id")].fromCancel == false)
+                    $(".theReceiver").prev().find(".undo-button").addClass("inactive");
+
+        theWorkspaceDisplay.find(".temporarily-hidden").addClass("permanently-hidden");
+        theWorkspaceDisplay.find(".permanently-hidden").removeClass("temporarily-hidden");
 
         itemsToUndo_2.undoFrom = "cancel";
+
+        if(itemsToUndo_3[theWorkspaceDisplay.parent().attr("id")] != null)
+            itemsToUndo_3[theWorkspaceDisplay.parent().attr("id")].undoFrom = "";
+
+        if(theWorkspaceDisplay.parent().attr("id") != "single-mode")
+            wpActions[theWorkspaceDisplay.parent().attr("id")] = { items: [], undoFrom: "", fromCancel: true};
         $(this).parent().parent().addClass("temporarily-hidden");
-        $(this).parent().parent().parent().prev().find(".undo-button, .save-deck").removeClass("inactive");
+        theWorkspaceDisplay.prev().find(".undo-button, .save-deck").removeClass("inactive");
     }
 
     /* ... Function that handles the page clicking event, It highlights the page clicked ... */
     function pageClick()
     {
-        $(this).toggleClass("pageSelected");
+        var thisPage = $(this);
+
+        thisPage.toggleClass("pageSelected");
+        var idNum = thisPage.attr("id").split('-')[1];
+
+        if(thisPage.hasClass("pageSelected"))
+            $("#page_"+idNum).parent().next().children()[0].checked = true;
+        else
+            $("#page_"+idNum).parent().next().children()[0].checked = false;
+
         if(document.getElementById('select-all-pages').checked)
-        {
             document.getElementById('select-all-pages').checked = false;
-        }
+
         else if($("#filePreviewGrid .pageDisplayItem").length == $(".pageSelected").length)
-        {
             document.getElementById('select-all-pages').checked = true;
-        }            
+        
+    }
+
+    /* ... ... */
+    function galleryPageClick()
+    {
+        var thisPage = $(this);
+
+        $(".galleryPageSelected").removeClass("galleryPageSelected");
+        thisPage.toggleClass("galleryPageSelected");
+
+        if((window.getComputedStyle($("#prevbtn-container")[0]).display == window.getComputedStyle($("#nextbtn-container")[0]).display) && (window.getComputedStyle($("#prevbtn-container")[0]).display == "none"))
+            $("#prevbtn-container, #nextbtn-container").show();
+
+        
+        $("#PagePreviewContainer").empty();
+        $("#PagePreviewContainer").append(
+            $("<img>").attr({"src": thisPage.find(".PagePreviewed").attr("src"), "class": "singlePage "+thisPage.children(":first").attr("id")})
+        );
+
+        if($("#page_" +(parseInt(thisPage.find(".PagePreviewed").attr("id").split('_')[1]) - 1)).length == 0)
+            $("#prevbtn-container").hide();
+        else
+            $("#prevbtn-container").show();
+
+        if($("#page_" +(parseInt(thisPage.find(".PagePreviewed").attr("id").split('_')[1]) + 1)).length == 0)
+            $("#nextbtn-container").hide();
+        else
+            $("#nextbtn-container").show();
     }
 
     /* ... Function that displays the pages from the array of image-data passed ... */
@@ -116,42 +167,81 @@ function mainThread(originalArray, filesArray, fileMasker)
             function(item, index)
             {
                 $("#filePreviewGrid").append(
-                    $("<div></div>").attr({"id": theMask+"-"+ (index+1), "class": "pageDisplayItem type-pdf"}).append(
+                    $("<div></div>").attr({"id": theMask+"-"+ (index+1), "class": "pageDisplayItem"}).append(
                         $("<img>").attr({"src": item, "id": "page-"+ (index+1), "class": "filePagePreviewed"}),
                         $("<div></div>").attr({"class": "pageNumber"}).text(index+1)
+                    )    
+                );
+                $("#PagesListContainer").append(
+                    $("<div></div>").attr({"class": "wholeGPageContainer"}).append(
+                        $("<div></div>").attr({"id": theMask+"-"+ (index+1), "class": "pageDisplayItem-1"}).append(
+                            $("<img>").attr({"src": item, "id": "page_"+ (index+1), "class": "PagePreviewed"}),
+                            $("<div></div>").attr({"class": "pageNumber-1"}).text(index+1)
+                        ),
+                        $("<div></div>").attr({"class": "tickPageContainer"}).append(
+                            $("<input>").attr({"type": "checkbox", "class": "tickPage"})
+                        )  
                     )    
                 );
             }
         );
 
+        $(".tickPage").unbind('click').bind('click',
+            function()
+            { 
+                var idNum = $(this).parent().prev().find(".PagePreviewed").attr("id").split("_")[1];
+                $("#page-"+idNum).parent().trigger('click');
+            }
+        );
+
         // Selecting the page
         $("#filePreviewGrid .pageDisplayItem").on('click', pageClick);
+
+        // Selecting the page from gallery view
+        $(".pageDisplayItem-1").on('click', galleryPageClick);
+
+        if(document.getElementById("gallery-view").checked)
+        {
+            $("#gallery-view").trigger('click');
+            document.getElementById("gallery-view").checked = true;
+        }
     }
+
+    var pagesOffsets = {};
 
     /* ... Function that handles the file click event, It highlights the file clicked ... */
     function fileClick()
     {
+        var thisFile = $(this);
+        firstTimeGalleryView = true;
+        pagesOffsets = {};
+        $("#PagesListContainer")[0].scrollLeft = 0;
         // Clear the viewer Grid
-        $("#filePreviewGrid").empty();
+        $("#filePreviewGrid, #PagePreviewContainer, #PagesListContainer").empty();
 
-        $("#select-all-pages, #select-all-pages-label").hide();
-        $(this).toggleClass("fileSelected");
+        $("#select-all-pages, #select-all-pages-label, #list-view, #list-view-label, #gallery-view, #gallery-view-label").hide();
+        $("#prevbtn-container, #nextbtn-container").hide();
+        $("#select-multiple, .numberRanges-labels, .numberRanges").hide();
+        thisFile.toggleClass("fileSelected");
 
-        if($(this).hasClass("fileSelected"))
+        if(thisFile.hasClass("fileSelected"))
         {
-            var nameOfFile = $(this).children()[1].innerHTML;
-            nameOfFile = nameOfFile.replace("&amp;","&");
+            var nameOfFile = fileMasker["mask_"+(parseInt(thisFile.attr("id").split('-')[1]) - 1)];
+            //nameOfFile = nameOfFile.replace("&amp;","&");
 
             var fileExtension = nameOfFile.slice(nameOfFile.indexOf('.'), nameOfFile.length);
 
             // remove selected from all other file items, to leave "this" as the only one selected
             $(".search-result").removeClass("fileSelected");
-            $(this).addClass("fileSelected");
+            thisFile.addClass("fileSelected");
 
             var masker = Object.keys(fileMasker).find(key => fileMasker[key] === nameOfFile);
 
             if(fileExtension === ".mp4")
             {
+                if(document.getElementById("gallery-view").checked)
+                    $("#list-view").trigger('click');
+
                 $("#filePreviewGrid").removeClass("fileOnDisplay");
                 $("#filePreviewGrid").removeClass("imageOnDisplay");
                 $("#filePreviewGrid").addClass("videoOnDisplay");
@@ -163,6 +253,9 @@ function mainThread(originalArray, filesArray, fileMasker)
             }
             else if(fileExtension == ".png" || fileExtension == ".jpg")
             {
+                if(document.getElementById("gallery-view").checked)
+                    $("#list-view").trigger('click');
+                    
                 $("#filePreviewGrid").removeClass("videoOnDisplay");
                 $("#filePreviewGrid").removeClass("fileOnDisplay");
                 $("#filePreviewGrid").addClass("imageOnDisplay");
@@ -171,13 +264,12 @@ function mainThread(originalArray, filesArray, fileMasker)
             {
                 document.getElementById("select-all-pages").checked = false;
                 
-                $("#select-all-pages, #select-all-pages-label").show();
+                $("#select-all-pages, #select-all-pages-label, #list-view, #list-view-label, #gallery-view, #gallery-view-label").show();
+                $("#select-multiple, .numberRanges-labels, .numberRanges").show();
                 setLoading();                    
                 $("#filePreviewGrid").removeClass("videoOnDisplay");
                 $("#filePreviewGrid").removeClass("imageOnDisplay");
                 $("#filePreviewGrid").addClass("fileOnDisplay");
-
-                
 
                 if(filesArray[masker].length < 2)
                 {
@@ -251,17 +343,45 @@ function mainThread(originalArray, filesArray, fileMasker)
                     filesArray[masker].push(document.getElementById("canvasToRemove-"+kh).toDataURL("image/png"));
 
                     $("#filePreviewGrid").append(
-                        $("<div></div>").attr({"id": masker+"-"+ (kh+1), "class": "pageDisplayItem type-pdf"}).append(
+                        $("<div></div>").attr({"id": masker+"-"+ (kh+1), "class": "pageDisplayItem"}).append(
                             $("<img>").attr({"src": document.getElementById("canvasToRemove-"+kh).toDataURL("image/png"), "id": "page-"+ (kh+1), "class": "filePagePreviewed"}),
                             $("<div></div>").attr({"class": "pageNumber"}).text(kh+1)
                         )    
                     );
+                    $("#PagesListContainer").append(
+                        $("<div></div>").attr({"class": "wholeGPageContainer"}).append(
+                            $("<div></div>").attr({"id": masker+";"+ (kh+1), "class": "pageDisplayItem-1"}).append(
+                                $("<img>").attr({"src": document.getElementById("canvasToRemove-"+kh).toDataURL("image/png"), "id": "page_"+ (kh+1), "class": "PagePreviewed"}),
+                                $("<div></div>").attr({"class": "pageNumber-1"}).text(kh+1)
+                            ),
+                            $("<div></div>").attr({"class": "tickPageContainer"}).append(
+                                $("<input>").attr({"type": "checkbox", "class": "tickPage"})
+                            )  
+                        )  
+                    );
                     $("#canvasToRemove-"+kh).remove();
                 }
 
+                $(".tickPage").unbind('click').bind('click',
+                    function()
+                    { 
+                        var idNum = $(this).parent().prev().find(".PagePreviewed").attr("id").split("_")[1];
+                        $("#page-"+idNum).parent().trigger('click');
+                    }
+                );
+
                 // Selecting the page
                 $("#filePreviewGrid .pageDisplayItem").on('click', pageClick);
+                
+                // Selecting the page from gallery view
+                $(".pageDisplayItem-1").on('click', galleryPageClick);
 
+                if(document.getElementById("gallery-view").checked)
+                {
+                    $("#gallery-view").trigger('click');
+                    document.getElementById("gallery-view").checked = true;
+                }
+                
                 doneLoading();
             }
         ).catch(doneLoading);
@@ -506,31 +626,25 @@ function mainThread(originalArray, filesArray, fileMasker)
         setLoading();
         $("#filesListGrid").empty();
 
-        // This maybe solved the fast rendering problem a little
-        // But there is a better way to solve it, which will require major redesign 
-        /* pdf_documents.forEach(
-            function(item)
-            {
-                item.destroy();
-            }
-        )
-        */
-        //pdf_documents = []; 
-
         filePromises = []
         // Loop through and display all results
         Object.keys(resultingMatches).forEach(
             function(item, index)
             {  
-                var theItem = fileMasker[resultingMatches[index]];                 
+                var masker = resultingMatches[index];
+                var theItem = fileMasker[masker];
+                var intmLast = theItem.split('.')[theItem.split('.').length - 1];
+                var file_Name = theItem.substring(0, theItem.indexOf(intmLast) - 1);
+                var id_num = (parseInt(masker.split('_')[1]) + 1);
+                
                 $("#filesListGrid").append(
-                    $("<div></div>").attr({"id": "result-" + (index+1), "class": "search-result"}).append(
-                        $("<img>").attr({"id": "file-"+(index+1), "class": "result-file"}),
-                        $("<div></div>").attr({"class": "result-file-name"}).text(theItem)
+                    $("<div></div>").attr({"id": "result-" + id_num, "class": "search-result"}).append(
+                        $("<img>").attr({"id": "file-"+id_num, "class": "result-file"}),
+                        $("<div></div>").attr({"class": "result-file-name"}).text(file_Name)
                     )
                 );
-                var intmLast = theItem.split('.')[theItem.split('.').length - 1];
-                displayFiles(theItem, index, theItem.substring(0, theItem.indexOf(intmLast) - 1), intmLast, "#file-"+(index+1))
+                
+                displayFiles(theItem, id_num-1, file_Name, intmLast, "#file-"+id_num);
                 $(".search-result").unbind('click').bind('click', fileClick);
             }
         );
@@ -646,6 +760,126 @@ function mainThread(originalArray, filesArray, fileMasker)
         }
     );
 
+    $("#prevbtn-container").click(
+        function()
+        {
+            if(window.getComputedStyle($("#nextbtn-container")[0]).display == "none")
+                $("#nextbtn-container").show();
+
+            var theSinglePage = $(".singlePage");
+
+            theSinglePage.animate(
+                {
+                    left: "50px",
+                    opacity: "0"
+                },
+            "slow");
+            
+            var nextSinglePage;
+            setTimeout( 
+                function() 
+                {
+                    var nextPage = $("#page_" + (parseInt(theSinglePage[0].classList[1].split('_')[1]) - 1));
+                    var nextPageOffset = pagesOffsets[("page_" + (parseInt(theSinglePage[0].classList[1].split('_')[1]) - 1))];
+
+                    var pagesList = $("#PagesListContainer")[0];
+                    var offsetDifference = nextPageOffset - scrollAmount;
+                    
+                    if(offsetDifference < 10)
+                    {
+                        offsetDifference = offsetDifference * (-1);
+                        var quot = ~~((offsetDifference + 10)/100);
+                        quot++;
+                        pagesList.scrollLeft = pagesList.scrollLeft - (quot*120);
+                    }
+                    else if(offsetDifference > 480)
+                    {
+                        var quot = ~~((offsetDifference - 480)/100);
+                        quot++;
+                        pagesList.scrollLeft = pagesList.scrollLeft + (quot*120);
+                    }
+
+                    nextPage.parent().trigger('click');
+                    nextSinglePage = $(".singlePage");
+                    nextSinglePage.css({"opacity": "0"});
+                    nextSinglePage.animate({ left: "-60px"},"fast");
+                    nextSinglePage.animate({ left: "+=60px", opacity: "1"},"slow");
+                    
+                    //console.log($("page_" +(parseInt(nextPage.attr("id").split('_')[1]) + 1)));
+                    if($("#page_" +(parseInt(nextPage.attr("id").split('_')[1]) - 1)).length == 0)
+                    {
+                        $("#prevbtn-container").hide();
+                    }
+                },
+            200);
+        }
+    );
+
+
+    $("#nextbtn-container").click(
+        function()
+        {
+            if(window.getComputedStyle($("#prevbtn-container")[0]).display == "none")
+                $("#prevbtn-container").show();
+
+            var theSinglePage = $(".singlePage");
+
+            theSinglePage.animate(
+                {
+                    left: "-50px",
+                    opacity: "0"
+                },
+            "slow");
+            
+            var nextSinglePage;
+            setTimeout( 
+                function() 
+                {
+                    var nextPage = $("#page_" + (parseInt(theSinglePage[0].classList[1].split('_')[1]) + 1));
+                    var nextPageOffset = pagesOffsets[("page_" + (parseInt(theSinglePage[0].classList[1].split('_')[1]) + 1))];
+
+                    var pagesList = $("#PagesListContainer")[0];
+                    var offsetDifference = nextPageOffset - scrollAmount;
+                    if(offsetDifference > 480)
+                    {
+                        var quot = ~~((offsetDifference - 480)/100);
+                        quot++;
+                        pagesList.scrollLeft = pagesList.scrollLeft + (quot*120);
+                    }
+                    else if(offsetDifference < 10)
+                    {
+                        offsetDifference = offsetDifference * (-1);
+                        var quot = ~~((offsetDifference + 10)/100);
+                        quot++;
+                        pagesList.scrollLeft = pagesList.scrollLeft - (quot*120);
+                    }
+
+                    nextPage.parent().trigger('click');
+                    nextSinglePage = $(".singlePage");
+                    nextSinglePage.css({"opacity": "0"});
+                    nextSinglePage.animate({ left: "60px"},"fast");
+                    nextSinglePage.animate({ left: "-=60px", opacity: "1"},"slow");
+                    
+                    
+                    if($("#page_" +(parseInt(nextPage.attr("id").split('_')[1]) + 1)).length == 0)
+                    {
+                        $("#nextbtn-container").hide();
+                    }
+                },
+            200);
+        }
+    );
+    
+    $("#PagesListContainer").on('scroll',
+        function()
+        {
+            var pagesListContainer = $(this)[0];
+            let x = pagesListContainer.scrollLeft;
+
+            scrollAmount = x.toFixed();
+        }
+    );
+
     // Making the view containers sortable
     $("#collectionViewer").sortable(
         {
@@ -659,74 +893,96 @@ function mainThread(originalArray, filesArray, fileMasker)
     $(".workspace-namer .undo-button").on('click',
         function()
         {
-            $(".workspace-namer .save-deck").removeClass("inactive");
             var thisButton = $(this);
+            thisButton.parent().find(".save-deck").removeClass("inactive");
 
-            if(itemsToUndo_2.undoFrom == "sorting")
+            if((itemsToUndo_3[thisButton.parent().parent().attr("id")] != null) && itemsToUndo_3[thisButton.parent().parent().attr("id")].undoFrom == "insertPage")
             {
-                if(itemsToUndo_2.foreignFlag)
+                var addedItemsArray = itemsToUndo_3[thisButton.parent().parent().attr("id")].items;
+                addedItemsArray.forEach(
+                    function(item)
+                    {
+                        item.remove();
+                    }
+                );
+                addedItemsArray = [];
+            }
+            else
+            {
+                // itemsToUndo_2.items[0] = original position of the moved element
+                // itemsToUndo_2.items[1] = the element node moved
+                // itemsToUndo_2.items[2] = the element node behind the one moved
+                // itemsToUndo_2.items[3] = New position of the moved element 
+                var pack = wpActions[thisButton.parent().parent().attr("id")];
+                if(pack != null)
                 {
-                    if(thisButton.parent().next().hasClass("theGiver"))
+                    if(itemsToUndo_2.undoFrom == "sorting")
                     {
-                        $(".theReceiver").children()[itemsToUndo_2.items[3]].remove();
-                        if(itemsToUndo_2.items[0] == 0)
+                        if(itemsToUndo_2.foreignFlag)
                         {
-                            thisButton.parent().next()[0].prepend(itemsToUndo_2.items[1]);
+                            if(thisButton.parent().next().hasClass("theGiver"))
+                            {
+                                $(".theReceiver").children()[pack.items[3]].remove();
+                                if(pack.items[0] == 0)
+                                    thisButton.parent().next()[0].prepend(pack.items[1]);
+                                
+                                else
+                                    pack.items[2].insertAdjacentElement("afterEnd", pack.items[1]);
+                            }
+                            else
+                            {
+                                thisButton.parent().next().children()[pack.items[3]].remove();
+                                if(pack.items[0] == 0)
+                                    $(".theGiver")[0].prepend(pack.items[1]);
+                            
+                                else
+                                    pack.items[2].insertAdjacentElement("afterEnd", pack.items[1]);
+                            }
+                            $(".theReceiver, .theGiver").prev().find(".undo-button").addClass("inactive");
                         }
                         else
                         {
-                            itemsToUndo_2.items[2].insertAdjacentElement("afterEnd", itemsToUndo_2.items[1]);
+                            thisButton.parent().next().children()[pack.items[3]].remove();
+                            if(pack.items[0] == 0)
+                                thisButton.parent().next()[0].prepend(pack.items[1]);
+                    
+                            else
+                                pack.items[2].insertAdjacentElement("afterEnd", pack.items[1]);
                         }
                     }
-                    else
+                    else if(pack.fromCancel)
                     {
-                        thisButton.parent().next().children()[itemsToUndo_2.items[3]].remove();
-                        if(itemsToUndo_2.items[0] == 0)
-                        {
-                            $(".theGiver")[0].prepend(itemsToUndo_2.items[1]);
-                        }
-                        else
-                        {
-                            itemsToUndo_2.items[2].insertAdjacentElement("afterEnd", itemsToUndo_2.items[1]);
-                        }
-                    }
+                        thisButton.parent().next().find(".temporarily-hidden").removeClass("temporarily-hidden");
+                        pack.fromCancel = false;
+                    }   
                 }
                 else
                 {
-                    thisButton.parent().next().children()[itemsToUndo_2.items[3]].remove();
-                    if(itemsToUndo_2.items[0] == 0)
+                    if(itemsToUndo_2.undoFrom == "sorting")
                     {
-                        thisButton.parent().next()[0].prepend(itemsToUndo_2.items[1]);
+                        thisButton.parent().next().children()[itemsToUndo_2.items[3]].remove();
+                            if(itemsToUndo_2.items[0] == 0)
+                                thisButton.parent().next()[0].prepend(itemsToUndo_2.items[1]);
+                    
+                            else
+                                itemsToUndo_2.items[2].insertAdjacentElement("afterEnd", itemsToUndo_2.items[1]);
                     }
                     else
-                    {
-                        itemsToUndo_2.items[2].insertAdjacentElement("afterEnd", itemsToUndo_2.items[1]);
-                    }
-                }
+                        thisButton.parent().next().find(".temporarily-hidden").removeClass("temporarily-hidden");
+                } 
             }
-            else if(itemsToUndo_2.undoFrom == "cancel")
-            {
-                $(".temporarily-hidden").removeClass("temporarily-hidden");
-            }
-            itemsToUndo_2.undoFrom = "";
-            itemsToUndo_2.foreignFlag = false;
-            itemsToUndo_2.items = [];
-
+            if(itemsToUndo_3[thisButton.parent().parent().attr("id")] != null)
+                itemsToUndo_3[thisButton.parent().parent().attr("id")].undoFrom = "";        
             thisButton.addClass("inactive");
-            $(".theReceiver, .theGiver").prev().find(".undo-button").addClass("inactive");
-            
-            // In same container mode
-            // itemsToUndo_2.items[0] = original position of the moved element
-            // itemsToUndo_2.items[1] = the element node moved
-            // itemsToUndo_2.items[2] = the element node behind the one moved
-            // itemsToUndo_2.items[3] = New position of the moved element 
         }
     );
     
     var itemsToUndo_2 = {};
+    var itemsToUndo_3 = {};
     itemsToUndo_2.undoFrom = "";
     itemsToUndo_2.foreignFlag = false;
     itemsToUndo_2.items = [];
+    var wpActions = {}
 
     // Making the viewers sortable and connected to each to enable sort between
     $(".workspace-displayer").sortable(
@@ -734,32 +990,83 @@ function mainThread(originalArray, filesArray, fileMasker)
             connectWith: ".workspace-displayer",
             start: function(event, ui)
                     {
-                        itemsToUndo_2.items = [];
-                        itemsToUndo_2.foreignFlag = false;
-                        itemsToUndo_2.items.push(ui.item.index());
-                        itemsToUndo_2.items.push(ui.item[0]);
-                        itemsToUndo_2.items.push(ui.item.prev()[0]);
+                        if(ui.item.parent().parent().attr("id") != "single-mode")
+                        {
+                            
+                            $(".workspace-displayer").removeClass("temporaryGiver");
+                            wpActions[ui.item.parent().parent().attr("id")] = { items: [], undoFrom: "", fromCancel: false};
+                            var pack = wpActions[ui.item.parent().parent().attr("id")];
+                            var undoList = pack.items;
 
-                        $(".workspace-displayer").removeClass("theGiver");
-                        ui.item.parent().addClass("theGiver");
+                            itemsToUndo_2.foreignFlag = false;
+                            undoList.push(ui.item.index());
+                            undoList.push(ui.item[0]);
+                            undoList.push(ui.item.prev()[0]);
+
+                            ui.item.parent().addClass("temporaryGiver");
+                        }
+                        else
+                        {
+                            itemsToUndo_2.items = [];
+                            itemsToUndo_2.foreignFlag = false;
+                            itemsToUndo_2.items.push(ui.item.index());
+                            itemsToUndo_2.items.push(ui.item[0]);
+                            itemsToUndo_2.items.push(ui.item.prev()[0]);
+                        }
                     },
             update: function(event, ui)
                     {
-                        if(!itemsToUndo_2.foreignFlag)
+                        ui.item.parent().prev().find(".save-deck, .undo-button").removeClass("inactive");
+                        itemsToUndo_2.undoFrom = "sorting";
+                        if(itemsToUndo_3[ui.item.parent().parent().attr("id")] != null)
+                            itemsToUndo_3[ui.item.parent().parent().attr("id")].undoFrom = "";
+
+                        if(ui.item.parent().parent().attr("id") != "single-mode")
                         {
-                            $(".workspace-namer .save-deck").removeClass("inactive");
-                            $(".workspace-displayer").prev().find(".undo-button").addClass("inactive");
-                            ui.item.parent().prev().find(".undo-button").removeClass("inactive");
-                            itemsToUndo_2.undoFrom = "sorting";   
-                            itemsToUndo_2.items.push(ui.item.index());
+                            var theGiverPack = wpActions[$(".temporaryGiver").parent().attr("id")];                            
+
+                            if(!itemsToUndo_2.foreignFlag)
+                            {
+                                theGiverPack.undoFrom = "sorting-within";
+                                theGiverPack.items.push(ui.item.index());
+
+                                if(ui.item.parent().hasClass("theGiver") && wpActions[$(".theReceiver").parent().attr("id")].undoFrom == "sorting-external")
+                                    $(".theReceiver").prev().find(".undo-button").addClass("inactive");
+
+                                else if(ui.item.parent().hasClass("theReceiver") && wpActions[$(".theGiver").parent().attr("id")].undoFrom == "sorting-external")
+                                    $(".theGiver").prev().find(".undo-button").addClass("inactive");
+
+                            }
+                            else
+                            {
+                                wpActions[ui.item.parent().parent().attr("id")] = { items: theGiverPack.items, undoFrom: "sorting-external", fromCancel: false };
+                                $(".workspace-displayer").removeClass("theGiver");
+                                $(".temporaryGiver").addClass("theGiver")
+                                $(".theGiver").removeClass("temporaryGiver");
+                                theGiverPack.undoFrom = "sorting-external";
+                                
+                                if(itemsToUndo_3[$(".theGiver").parent().attr("id")] != null)
+                                    itemsToUndo_3[$(".theGiver").parent().attr("id")].undoFrom = "";
+
+                                $(".workspace-displayer").removeClass("theReceiver");
+                                ui.item.parent().addClass("theReceiver");
+                        
+                                $(".theGiver").prev().find(".save-deck, .undo-button").removeClass("inactive");
+
+                                var isolatedWorkspace = $(".workspace-displayer:not(.theGiver):not(.theReceiver):eq(1)");
+
+                                if(wpActions[isolatedWorkspace.parent().attr("id")] != null)
+                                    if(wpActions[isolatedWorkspace.parent().attr("id")].undoFrom == "sorting-external")
+                                    isolatedWorkspace.prev().find(".undo-button").addClass("inactive");
+                            }
                         }
+                        else
+                            itemsToUndo_2.items.push(ui.item.index());
+
                     },
             receive: function(event, ui)
                     {
-                        $(".workspace-displayer").removeClass("theReceiver");
-                        ui.item.parent().addClass("theReceiver");
                         itemsToUndo_2.foreignFlag = true;
-                        $(".theGiver").prev().find(".undo-button").removeClass("inactive");
                     }
         }
     );
@@ -800,6 +1107,8 @@ function mainThread(originalArray, filesArray, fileMasker)
         {
             setLoading();
             var thisButton = $(this);
+            thisButton.parent().next().find(".temporarily-hidden, .permanently-hidden").detach();
+            thisButton.parent().find(".undo-button").addClass("inactive");
             Workspaces.forEach(
                 function(item)
                 {
@@ -814,7 +1123,6 @@ function mainThread(originalArray, filesArray, fileMasker)
                         $("#full-mode").find("#"+theMask).text(item.fileName)
                         
                         item.fileContents = [];
-                        $(".temporarily-hidden, .permanently-hidden").detach();
                         
                         var currentContent = thisButton.parent().next().children();
 
@@ -840,6 +1148,13 @@ function mainThread(originalArray, filesArray, fileMasker)
                             item.type = "any";
 
                         item.exportAs = item.type == "any" ? thisButton.parent().next().next().find(".deck-to-export-options").val(): "Powerpoint(.pptx)";
+                        
+                        item.tags = [];
+                        theTags = $("#tagsBatch").children();
+                        for(let bn = 0; bn < theTags.length; bn++)
+                        {
+                            item.tags.push(theTags[bn].firstChild.innerHTML);
+                        }
                         return;
                     }
                 }
@@ -849,12 +1164,43 @@ function mainThread(originalArray, filesArray, fileMasker)
         }
     );
 
+    $("#tagInput").on('keyup',
+        function(e)
+        {
+            if(e.key === 'Enter' || e.keyCode === 13)
+            {
+                $("#tagsBatch").append(
+                    $("<div></div>").attr({"class": "upperTagContainer"}).append(
+                        $("<div></div>").attr({"class": "tagContent"}).text($("#tagInput")[0].value),
+                        $("<div></div>").attr({"class": "cancelContainer-2 deckItem"}).append(
+                            $("<div></div>").attr({"class": "removeTag"}).append(
+                                $("<img>").attr({"src": "images/cancelbtn.png", "class": "cancelImg"})
+                            )
+                        )
+                    )
+                );
+
+                $(".removeTag").unbind('click').bind('click',
+                    function()
+                    {
+                        $(this).parent().parent().detach();
+                        $("#single-mode").find(".save-deck").removeClass("inactive");
+                    }
+                );
+
+                $("#single-mode").find(".save-deck").removeClass("inactive");
+                $("#tagInput").val("");
+            }
+        }
+    );
+
 
     // Select options which determine which workspace to view
     $(".deck-to-view-options").change(
         function()
         {
             var thisOption = $(this);
+            $("#tagsBatch").empty();
             
             // Setting the default name to show up in the input field
             thisOption.parent().prev().prev().children()[2].innerHTML = thisOption.val();
@@ -962,6 +1308,13 @@ function mainThread(originalArray, filesArray, fileMasker)
                             // Otherwise we are in single view mode, changing cloned item into single-mode sizing
                             else
                             {
+                                if(g == 0)
+                                {
+                                    $("#add-tags-heading, #tagsContainer").animate( {opacity: "100%"}, 600);
+                                    $("#deckContainer").animate( {"margin-left": "0px"}, 600 );
+                                    $("#tagsContainer").removeClass("invisible");
+                                    $("#tagInput").removeClass("inactive");
+                                }
                                 elementAdded.classList.add("wholeSlideContainer-1");
                                 elementAdded.classList.add(Object.keys(fileMasker).find(key => fileMasker[key] === theWorkspace.fileContents[g].fileFrom));
                                 elementAdded.appendChild(
@@ -982,13 +1335,33 @@ function mainThread(originalArray, filesArray, fileMasker)
                             }
                         }
 
+                        for(let lt = 0; lt < theWorkspace.tags.length; lt++)
+                        {
+                            $("#tagsBatch").append(
+                                $("<div></div>").attr({"class": "upperTagContainer"}).append(
+                                    $("<div></div>").attr({"class": "tagContent"}).text(theWorkspace.tags[lt]),
+                                    $("<div></div>").attr({"class": "cancelContainer-2 deckItem"}).append(
+                                        $("<div></div>").attr({"class": "removeTag"}).append(
+                                            $("<img>").attr({"src": "images/cancelbtn.png", "class": "cancelImg"})
+                                        )
+                                    )
+                                )
+                            );
+                        }
+                        $(".removeTag").unbind('click').bind('click',
+                            function()
+                            {
+                                $(this).parent().parent().detach();
+                                $("#single-mode").find(".save-deck").removeClass("inactive");
+                            }
+                        );
                         break;
                     }
                 }
 
                 // On click handler for cancel button
                 // Remove file when button clicked
-                $(".cancelBtn").on('click', workspaceUndo);
+                $(".cancelBtn").unbind('click').bind('click', workspaceUndo);
             }
         }
     );
@@ -1009,6 +1382,10 @@ function mainThread(originalArray, filesArray, fileMasker)
             // Full list mode
             if(value == "Full list")
             {
+                $("#tagsBatch").empty();
+                $("#addPagesToDeckbtn")[0].innerHTML = "A<br>d<br>d<br><br>t<br>o<br><br>D<br>e<br>c<br>k";
+                $("#addPagesToDeckbtn").addClass("inactive").addClass("unclickable");
+                $("#insertInto-1, #insertInto-2, #insertInto-3").fadeOut();
                 $("#package-navbar .undo-button").show();
                 $("#add-tags-heading, #tagsContainer").animate( {opacity: "0"}, 600);
                 $("#tagsContainer").addClass("invisible");
@@ -1025,11 +1402,12 @@ function mainThread(originalArray, filesArray, fileMasker)
             // One deck mode
             else if (value == "1 deck")
             {
+                $("#tagsBatch").empty();
+                $("#addPagesToDeckbtn").removeClass("inactive");
+                $("#addPagesToDeckbtn")[0].innerHTML = "I<br>n<br>s<br>e<br>r<br>t<br><br>I<br>n<br>t<br>o";
+                $("#insertInto-2, #insertInto-3").fadeOut();
+                $("#insertInto-1").fadeIn();
                 $("#package-navbar .undo-button").hide();
-                $("#add-tags-heading, #tagsContainer").animate( {opacity: "100%"}, 600);
-                $("#deckContainer").animate( {"margin-left": "0px"}, 600 );
-                $("#tagsContainer").removeClass("invisible");
-                $("#tagInput").removeClass("inactive");
 
                 $("#workspace-1, #single-mode").show();
                 $("#full-mode, .two-view, .three-view").hide();
@@ -1044,6 +1422,11 @@ function mainThread(originalArray, filesArray, fileMasker)
             // Two deck mode
             else if(value == "2 decks")
             {
+                $("#tagsBatch").empty();
+                $("#addPagesToDeckbtn").removeClass("inactive");
+                $("#addPagesToDeckbtn")[0].innerHTML = "I<br>n<br>s<br>e<br>r<br>t<br><br>I<br>n<br>t<br>o";
+                $("#insertInto-3").fadeOut();
+                $("#insertInto-1, #insertInto-2").fadeIn();
                 $("#package-navbar .undo-button").hide();
                 $("#add-tags-heading, #tagsContainer").animate( {opacity: "0"}, 600);
                 $("#tagsContainer").addClass("invisible");
@@ -1081,6 +1464,10 @@ function mainThread(originalArray, filesArray, fileMasker)
             // Three deck mode
             else
             {
+                $("#tagsBatch").empty();
+                $("#addPagesToDeckbtn").removeClass("inactive");
+                $("#addPagesToDeckbtn")[0].innerHTML = "I<br>n<br>s<br>e<br>r<br>t<br><br>I<br>n<br>t<br>o";
+                $("#insertInto-1, #insertInto-2, #insertInto-3").fadeIn();
                 $("#package-navbar .undo-button").hide();
                 $("#add-tags-heading, #tagsContainer").animate( {opacity: "0"}, 600);
                 $("#tagsContainer").addClass("invisible");
@@ -1182,6 +1569,201 @@ function mainThread(originalArray, filesArray, fileMasker)
         }    
     )
 
+    function minorBtnsClickHandler(theDisplayer)
+    {
+        var indexOfWorkspace;
+        for(let  i = 0; i < Workspaces.length; i++)
+        {
+            if(Workspaces[i].fileName == theDisplayer.prev().find(".workspace-name-written").text())
+            {
+                indexOfWorkspace = i;
+                break;
+            }    
+        }
+        if(indexOfWorkspace != null)
+            itemsToUndo_3[theDisplayer.parent().attr("id")] = { undoFrom: "insertPage", items: [] };
+
+
+        if($("#filePreviewGrid").hasClass("videoOnDisplay"))
+        {
+            if(indexOfWorkspace != null)
+                theDisplayer.prev().find(".save-deck, .undo-button").removeClass("inactive");
+            var theVideo = $("#filePreviewGrid").children()[0];
+            var theVideoNameMask = theVideo.getAttribute("id");
+            if($("#canv-"+theVideoNameMask).length == 0)
+            {
+                var canv = document.createElement("canvas");
+                document.body.appendChild(canv);
+                canv.width = 400;
+                canv.height = 400;
+                canv.id = "canv-"+theVideoNameMask;
+                canv.getContext('2d').drawImage(theVideo, 0, 0, canv.width, canv.height);
+                canv.style.display = "none";
+            }
+
+            let clonedItem = document.createElement("div");
+            theDisplayer[0].appendChild(clonedItem);
+            var elementAdded = theDisplayer[0].lastChild;
+            elementAdded.id = "itemNum-" + indexOfWorkspace + "-" + parseInt(theDisplayer.children().length - 1);
+            
+            if(theDisplayer.hasClass("two-view-display"))
+            {
+                elementAdded.classList.add("wholeSlideContainer-2");
+                elementAdded.classList.add(theVideo.getAttribute("id").split('-')[0]);
+                elementAdded.appendChild(
+                    $("<div></div>").attr({"class": "pageDisplayItem-2 deckItem deckLowerItem"}).append(
+                        $("<video>").attr({"src": theVideo.lastChild.getAttribute("src"), "class": "filePagePreviewed-2"}),
+                        $("<div></div>").attr({"class": " mediumPageNumber pageNumber"}).text(fileMasker[theVideoNameMask])
+                    )[0]
+                );
+                elementAdded.appendChild(
+                    $("<div></div>").attr({"class": "cancelContainer deckItem"}).append(
+                        $("<div></div>").attr({"class": "cancelBtn cancelBtn-scaled"}).append(
+                            $("<img>").attr({"src": "images/cancelbtn.png", "class": "cancelImg"})
+                        )
+                    )[0]
+                );
+            }
+            else if(theDisplayer.hasClass("three-view-display"))
+            {
+                elementAdded.classList.add("wholeSlideContainer-3");
+                elementAdded.classList.add(theVideo.getAttribute("id").split('-')[0]);
+                elementAdded.appendChild(
+                    $("<div></div>").attr({"class": "pageDisplayItem-2 deckItem deckLowerItem"}).append(
+                        $("<video>").attr({"src": theVideo.lastChild.getAttribute("src"), "class": "filePagePreviewed-3"}),
+                        $("<div></div>").attr({"class": " smallPageNumber pageNumber"}).text(fileMasker[theVideoNameMask])
+                    )[0]
+                );
+                elementAdded.appendChild(
+                    $("<div></div>").attr({"class": "cancelContainer deckItem"}).append(
+                        $("<div></div>").attr({"class": "cancelBtn cancelBtn-scaled"}).append(
+                            $("<img>").attr({"src": "images/cancelbtn.png", "class": "cancelImg"})
+                        )
+                    )[0]
+                );
+            }
+            else
+            {
+                elementAdded.classList.add("wholeSlideContainer-1");
+                elementAdded.classList.add(theVideo.getAttribute("id").split('-')[0]);
+                elementAdded.appendChild(
+                    $("<div></div>").attr({"class": "pageDisplayItem-2 deckItem deckLowerItem"}).append(
+                        $("<video>").attr({"src": theVideo.lastChild.getAttribute("src"), "class": "filePagePreviewed-1"}),
+                        $("<div></div>").attr({"class": "pageNumber"}).text(fileMasker[theVideoNameMask])
+                    )[0]
+                );
+                elementAdded.appendChild(
+                    $("<div></div>").attr({"class": "cancelContainer deckItem"}).append(
+                        $("<div></div>").attr({"class": "cancelBtn"}).append(
+                            $("<img>").attr({"src": "images/cancelbtn.png", "class": "cancelImg"})
+                        )
+                    )[0]
+                );
+            }
+            itemsToUndo_3[theDisplayer.parent().attr("id")].items.push(elementAdded);
+        }
+        else if($("#filePreviewGrid").hasClass("imageOnDisplay"))
+        {
+            console.log("planning...");
+        }
+        else
+        {
+            var selectedPages = $("#filePreviewGrid .pageSelected");
+
+            document.getElementById('select-all-pages').checked = false;
+
+            if(selectedPages.length > 0)
+            {
+                if(indexOfWorkspace != null)
+                    theDisplayer.prev().find(".save-deck, .undo-button").removeClass("inactive");
+
+                // Loop through all selected items
+                for(let i = 0; i < selectedPages.length; i++) 
+                {
+                    let item = selectedPages[i];
+                    item.classList.remove("pageSelected");
+                    var idNumber = item.firstChild.getAttribute("id").split('-')[1];
+                    $("#page_"+idNumber).parent().next().children()[0].checked = false;
+
+                    let clonedItem = document.createElement("div");
+                    theDisplayer[0].appendChild(clonedItem);
+                    var elementAdded = theDisplayer[0].lastChild;
+                    elementAdded.id = "itemNum-" + indexOfWorkspace + "-" + parseInt(theDisplayer.children().length - 1);
+                    
+                    if(theDisplayer.hasClass("two-view-display"))
+                    {
+                        elementAdded.classList.add("wholeSlideContainer-2");
+                        elementAdded.classList.add(item.getAttribute("id").split('-')[0]);
+                        elementAdded.appendChild(
+                            $("<div></div>").attr({"class": "pageDisplayItem-2 deckItem deckLowerItem"}).append(
+                                $("<img>").attr({"src": item.firstChild.getAttribute("src"), "class": "filePagePreviewed-2"}),
+                                $("<div></div>").attr({"class": " mediumPageNumber pageNumber"}).text(item.lastChild.innerHTML)
+                            )[0]
+                        );
+                        elementAdded.appendChild(
+                            $("<div></div>").attr({"class": "cancelContainer deckItem"}).append(
+                                $("<div></div>").attr({"class": "cancelBtn cancelBtn-scaled"}).append(
+                                    $("<img>").attr({"src": "images/cancelbtn.png", "class": "cancelImg"})
+                                )
+                            )[0]
+                        );
+                    }
+                    else if(theDisplayer.hasClass("three-view-display"))
+                    {
+                        elementAdded.classList.add("wholeSlideContainer-3");
+                        elementAdded.classList.add(item.getAttribute("id").split('-')[0]);
+                        elementAdded.appendChild(
+                            $("<div></div>").attr({"class": "pageDisplayItem-2 deckItem deckLowerItem"}).append(
+                                $("<img>").attr({"src": item.firstChild.getAttribute("src"), "class": "filePagePreviewed-3"}),
+                                $("<div></div>").attr({"class": " smallPageNumber pageNumber"}).text(item.lastChild.innerHTML)
+                            )[0]
+                        );
+                        elementAdded.appendChild(
+                            $("<div></div>").attr({"class": "cancelContainer deckItem"}).append(
+                                $("<div></div>").attr({"class": "cancelBtn cancelBtn-scaled"}).append(
+                                    $("<img>").attr({"src": "images/cancelbtn.png", "class": "cancelImg"})
+                                )
+                            )[0]
+                        );
+                    }
+                    else
+                    {
+                        elementAdded.classList.add("wholeSlideContainer-1");
+                        elementAdded.classList.add(item.getAttribute("id").split('-')[0]);
+                        elementAdded.appendChild(
+                            $("<div></div>").attr({"class": "pageDisplayItem-2 deckItem deckLowerItem"}).append(
+                                $("<img>").attr({"src": item.firstChild.getAttribute("src"), "class": "filePagePreviewed-1"}),
+                                $("<div></div>").attr({"class": "pageNumber"}).text(item.lastChild.innerHTML)
+                            )[0]
+                        );
+                        elementAdded.appendChild(
+                            $("<div></div>").attr({"class": "cancelContainer deckItem"}).append(
+                                $("<div></div>").attr({"class": "cancelBtn"}).append(
+                                    $("<img>").attr({"src": "images/cancelbtn.png", "class": "cancelImg"})
+                                )
+                            )[0]
+                        );
+                    }
+                    itemsToUndo_3[theDisplayer.parent().attr("id")].items.push(elementAdded);
+                }
+            }
+        } 
+    }
+
+    $(".smallerInsert").on('click', 
+        function()
+        {
+            var buttonValue = $(this).text();
+            var theDisplayer = $(".workspace-displayer:eq("+ buttonValue +")");
+
+            if(buttonValue == "1" && (window.getComputedStyle($("#insertInto-2")[0]).display == "none" && window.getComputedStyle($("#insertInto-3")[0]).display == "none"))
+                minorBtnsClickHandler($(".workspace-displayer:eq("+ (parseInt(buttonValue) - 1) +")"));
+            else
+                minorBtnsClickHandler(theDisplayer);
+            
+            $(".cancelBtn").unbind('click').bind('click', workspaceUndo); 
+        }
+    );
 
     // The Top Right Button on the right Preview Grid
     // On click, adds all selected items to lower Collection grid
@@ -1222,12 +1804,11 @@ function mainThread(originalArray, filesArray, fileMasker)
             if($("#canv-"+theVideoNameMask).length == 0)
             {
                 var canv = document.createElement("canvas");
-                var vidi = $("#filePreviewGrid").children()[0];
                 document.body.appendChild(canv);
                 canv.width = 400;
                 canv.height = 400;
                 canv.id = "canv-"+theVideoNameMask;
-                canv.getContext('2d').drawImage(vidi, 0, 0, canv.width, canv.height);
+                canv.getContext('2d').drawImage(theVideo, 0, 0, canv.width, canv.height);
                 canv.style.display = "none";
             }
         }
@@ -1253,6 +1834,8 @@ function mainThread(originalArray, filesArray, fileMasker)
                     //var fileItsFromMask = Object.keys(fileMasker).find(key => fileMasker[key] === item.getAttribute("id").split("-")[0]);
                     
                     item.classList.remove("pageSelected");
+                    var idNumber = item.firstChild.getAttribute("id").split('-')[1];
+                    $("#page_"+idNumber).parent().next().children()[0].checked = false;
 
                     // Adding the item to the things to undo array
                     itemsToUndo.items.push(
@@ -1276,7 +1859,7 @@ function mainThread(originalArray, filesArray, fileMasker)
         }
         // On click handler for cancel button
         // Remove file when button clicked
-        $(".cancelBtn").unbind('click').bind('click',
+        $(".wholeSlideContainer").find(".cancelBtn").unbind('click').bind('click',
             function()
             {
                 $("#package-navbar .undo-button").removeClass("inactive");
@@ -1296,6 +1879,10 @@ function mainThread(originalArray, filesArray, fileMasker)
     $("#create-new-workspace").on('click',
     function()
     {
+        $("#insertInto-1, #insertInto-2, #insertInto-3").fadeOut();
+        $("#addPagesToDeckbtn").removeClass("inactive").removeClass("unclickable");
+        $("#addPagesToDeckbtn")[0].innerHTML = "A<br>d<br>d<br><br>t<br>o<br><br>D<br>e<br>c<br>k";
+
         $("#add-tags-heading, #tagsContainer").animate( {opacity: "0"}, 600);
         $("#tagsContainer").addClass("invisible");
         $("#tagInput").addClass("inactive");
@@ -1373,7 +1960,7 @@ function mainThread(originalArray, filesArray, fileMasker)
             $("#full-mode").append(
                 $("<div></div>").attr({"class": "upperWSContainer"}).append(
                     $("<div></div>").attr({"id": "mask_"+num, "class": "theWorkspaces"}).text(newWorspacename),
-                    $("<div></div>").attr({"class": "cancelContainer"}).append(
+                    $("<div></div>").attr({"class": "cancelContainer-2"}).append(
                         $("<div></div>").attr({"class": "removeDeck"}).append(
                             $("<img>").attr({"src": "images/cancelbtn.png", "class": "cancelImg"})
                         )
@@ -1419,7 +2006,8 @@ function mainThread(originalArray, filesArray, fileMasker)
                     fileName: newWorspacename,
                     exportAs: videoFound ? "Powerpoint(.pptx)" : "",
                     type: videoFound ? "powerpoint" : "any",
-                    fileContents: collectionChildren
+                    fileContents: collectionChildren,
+                    tags: []
                 }
             );
 
@@ -1452,10 +2040,93 @@ function mainThread(originalArray, filesArray, fileMasker)
             if(document.getElementById('select-all-pages').checked)
             {
                 $("#filePreviewGrid .pageDisplayItem").addClass("pageSelected");
+                $(".tickPage").prop("checked", true);
             }
             else
             {
                 $("#filePreviewGrid .pageDisplayItem").removeClass("pageSelected");
+                $(".tickPage").prop("checked", false);
+            }
+        }
+    );
+
+    $(".numberRanges").on('keyup', 
+        function (e) 
+        {
+            e = e || window.event;
+
+            if (e.key === 'Enter' || e.keyCode === 13)
+            {
+                var minValue = parseInt($("#minPageToSelect").val());
+                var maxValue = parseInt($("#maxPageToSelect").val());
+
+                if(minValue < 1)
+                    alert("Minimum page number should be 1");
+                else if(maxValue < 1)
+                    alert("Maximum page number cannot be less than 1");
+                else if(minValue > maxValue)
+                    alert("Minimun cannot be larger than the Maximum");
+                else if( minValue <= maxValue )
+                {
+                    for(let i = minValue - 1; i < maxValue; i++)
+                    {
+                        if(!$(".tickPage:eq(" + i + ")").prop("checked"))
+                            $(".tickPage:eq(" + i + ")").prop("checked", true).trigger('click');
+                    }
+                }
+            }
+            else if(e.key == "ArrowLeft" || e.key == "ArrowRight" || e.keyCode == 37 || e.keyCode == 39 || e.key == "Left" || e.key == "Right")
+            {
+                if($("#minPageToSelect").is(":focus"))
+                    $("#maxPageToSelect").focus();
+
+                else
+                    $("#minPageToSelect").focus();
+            }
+        }
+    );
+
+    // setting the list view(default) functionality
+    $("#list-view").click(
+        function()
+        {
+            $(this).addClass("unclickable");
+            document.getElementById('gallery-view').checked = false;
+            $("#gallery-view").removeClass("unclickable");
+
+            $("#filePreviewContainer").removeClass("Gallery-view-mode");
+            $("#filePreviewContainer").addClass("List-view-mode");
+
+            $("#PagePreviewGrid, #PagesListContainer").hide();
+            $("#filePreviewGrid").show();
+        }
+    );
+
+    // setting the list view(default) functionality
+    $("#gallery-view").click(
+        function()
+        {
+            $(this).addClass("unclickable");
+            document.getElementById('list-view').checked = false;
+            $("#list-view").removeClass("unclickable");
+
+            $("#filePreviewContainer").removeClass("List-view-mode");
+            $("#filePreviewContainer").addClass("Gallery-view-mode");
+
+            $("#filePreviewGrid").hide();
+            $("#PagePreviewGrid, #PagesListContainer").show();
+
+            if(firstTimeGalleryView)
+            {
+                $("#PagesListContainer").addClass("position-relative");
+                var pages = $("#PagesListContainer").children();
+
+                for(let hj = 0; hj < pages.length; hj++)
+                    pagesOffsets["page_"+ (hj+1)] = pages[hj].offsetLeft;
+
+                firstTimeGalleryView = false;
+                scrollAmount = 0;
+                $("#PagesListContainer").removeClass("position-relative");
             }
         }
     );
@@ -1490,6 +2161,7 @@ function mainThread(originalArray, filesArray, fileMasker)
             if(Workspaces.length == 0)
             {
                 console.log("Nothing to download, Collection is empty...");
+                alert("Nothing to download, Collection is empty...");
             }
             else
             {
@@ -1498,7 +2170,8 @@ function mainThread(originalArray, filesArray, fileMasker)
                 theWorkspaces.forEach(
                     function(item)
                     {
-                        delete item.type
+                        delete item.type;
+                        delete item.tags;
                         item.fileContents.forEach(
                             function(itm)
                             {
@@ -1584,13 +2257,13 @@ function mainThread(originalArray, filesArray, fileMasker)
                                                     contentType: "application/json"
                                                 }).catch(() => { console.log("The export POST request failed...")});
 
-                                            }, 5000);
+                                            }, 10000);
                                     }
                                 );
                             }
-                            console.log("Collection created...");
                         }
-                    );                       
+                    );  
+                    alert("Collection created successfully...");                     
                 }
             }
         }
