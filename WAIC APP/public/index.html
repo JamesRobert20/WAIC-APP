@@ -3,7 +3,7 @@
     <head>
 
         <meta charset="utf-8">
-        <title>My Library</title>
+        <title>Content Manager</title>
 
         <!-- Styling sheets  -->
         <link rel="stylesheet" href="stylings/fileSelection.css">
@@ -65,16 +65,43 @@
                         </div>
                         <div id="filesListGrid"></div>
                     </div>
-                    <div id="filePreviewContainer" class="fileSelectionGrids-item">
+                    <div id="filePreviewContainer" class="fileSelectionGrids-item List-view-mode">
                         <div id="filePreviewGrid"></div>
+                        <div id="PagePreviewGrid" style="display: none;">
+                            <div id="prevbtn-container" style="display: none;">
+                                <img class="prev-button" src="images/prvBtn.png">
+                            </div>
+                            <div id="PagePreviewContainer"></div>
+                            <div id="nextbtn-container" style="display: none;">
+                                <img class="next-button" src="images/nxtBtn.png">
+                            </div>
+                        </div>
+                        <div id="PagesListContainer" style="display: none;"></div>
                         <div id="filePreviewNavBar">
+                            <label id="select-multiple" style="display: none">Select: </label>
+                            <label for="minPageToSelect" class="numberRanges-labels" style="display: none">From</label>
+                            <input type="number" id="minPageToSelect" class="numberRanges" min="1" style="display: none">
+                            <label for="maxPageToSelect" class="numberRanges-labels" style="display: none">To</label>
+                            <input type="number" id="maxPageToSelect" class="numberRanges" style="display: none">
+
                             <label for="select-all-pages" id="select-all-pages-label" style="display: none">Select All:</label>
                             <input id="select-all-pages" type="checkbox" style="display: none">
+                            
+                            <label for="list-view" id="list-view-label" style="display: none">List view:</label>
+                            <input id="list-view" class="unclickable" type="checkbox" style="display: none" checked>
+
+                            <label for="gallery-view" id="gallery-view-label" style="display: none">Gallery view:</label>
+                            <input id="gallery-view" type="checkbox" style="display: none">
                         </div> 
-                    </div>                   
-                    <button id="addPagesToDeckbtn">
-                        A<br>d<br>d<br><br>t<br>o<br><br>D<br>e<br>c<br>k
-                    </button>
+                    </div>
+                    <div id="insertPagesButtonsContainer">                   
+                        <button id="addPagesToDeckbtn">
+                            A<br>d<br>d<br><br>t<br>o<br><br>D<br>e<br>c<br>k
+                        </button>
+                        <button id="insertInto-1" class="smallerInsert" style="display: none">1</button>
+                        <button id="insertInto-2" class="smallerInsert" style="display: none">2</button>
+                        <button id="insertInto-3" class="smallerInsert" style="display: none">3</button>
+                    </div>
                 </div>
                 <div id="collection-tags-Parent">
                     <div id="deckName-Container" class="deckGridHeadings">
@@ -115,6 +142,7 @@
                     </div>
                     <div id="tagsContainer" class="deckGridContainers invisible" style="opacity: 0;">
                         <input id="tagInput" class="inactive" placeholder="Type a tag name to add">
+                        <div id="tagsBatch"></div>
                     </div>
                     <div>
                         <button id="save-collection" class="collection-post-btns">Save Collection</button>
