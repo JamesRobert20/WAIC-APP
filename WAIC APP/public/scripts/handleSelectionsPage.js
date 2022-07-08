@@ -1,19 +1,54 @@
+/** Handles all front-end actions
+ * @param {Array.<Object>} originalArray The list of files in the chosen directory, received from the server
+ * @param {Object} filesArray An object containing the files' generated keys as the property, and array of strings[imagedata] as value
+ * @param {Object} fileMasker An object containing the files' generated keys as the property, and the file name that the key maps to, as the value
+*/
 function mainThread(originalArray, filesArray, fileMasker)
 {
+    /**
+     * Array of promises that try to render the files
+     * @type {Array.<(Promise)>}
+     */
     var filePromises = [];
-    var PDF_DOC, TOTAL_PAGES, matcher;
+    /**
+     * Promise containing the file trying to be rendered currently
+     * @type {Promise}
+     */
+    var PDF_DOC;
+    /**
+     * Total number of pages in the file
+     * @type {Number}
+     */
+    var TOTAL_PAGES;
+    /**
+     * String that contains the characters typed in the search field, by the user
+     * @type {String}
+     */
+    var matcher;
+    /**
+     * Records the first time gallery view was opened(Inorder to get initial offset of elements)
+     * @type {Boolean}
+     */
     var firstTimeGalleryView = true;
+    /**
+     * Stores the amount of pixels scrolled
+     * @type {Number}
+     */
     var scrollAmount;
    
+    /**
+     * An object containing file generated keys as the property, and file name that the key maps to as value,
+     * similar to "fileMasker" but this one is for the files generated inside the colection
+     * @type {Object}
+     */
     var fileMasker_1 = {};
 
-    //var filesArray = { "WAIC.pdf":[], "potter.pdf":[], "phil.pdf":[], "percyjack.pdf":[], "sauvage.mp4":[], "SoTL.pdf":[], "loadTest.pdf":[], "phil.pdf":[], "percyjack.pdf":[], "SoTL.pdf":[], "WAIC.pdf":[], "potter.pdf":[], "Disciplinary.pdf":[] };
-
+    // Append a container that will hold canvases to temporarily render first pages of the files and get image data
     $("body").append(
         $("<div></div>").attr({"id": "cover-pages-container"})
     );
 
-    // Loop through and display all results
+    // Loop through the list of files and displaying them using their first pages as cover page
     for(var index = 0; index < Object.keys(filesArray).length; index++)
     {
         item = fileMasker["mask_"+index];
@@ -27,20 +62,21 @@ function mainThread(originalArray, filesArray, fileMasker)
             )
         );
 
-        if( theExtension == "pdf")
+        // If the file being rendered is a pdf, first page of the file gets rendered on temporary invisible canvas
+        if( theExtension.toLowerCase() == "pdf")
         {
             $("#cover-pages-container").append(
-                $("<canvas></canvas>").attr({"id": "cover-page-"+(index+1), "class": "mask_"+index, "width": "420"}).css("display","none")
+                $("<canvas></canvas>").attr({"id": "cover-page-"+(index+1), "class": "mask_"+index, "width": "400"}).css("display","none")
             );
             displayFiles(item, index, item.substring(0, item.indexOf(theExtension) - 1), theExtension, "#cover-page-"+(index+1));
         }
-        else
+        else if(theExtension.toLowerCase() == "png" || theExtension.toLowerCase() == "jpg" || theExtension.toLowerCase() == "mp4")
         {
             displayFiles(item, index, item.substring(0, item.indexOf(theExtension) - 1), theExtension, "#file-"+(index+1));
         }
     }
 
-
+    // Wait for all first pages of files to finish rendering
     Promise.all(filePromises).then(
         function()
         {
@@ -64,53 +100,90 @@ function mainThread(originalArray, filesArray, fileMasker)
     ).catch(
         function(e)
         {
-            console.log(e.message + " sumn bad happened");
+            console.log(e.message + " , at least one of the files could not be rendered");
             doneLoading();
         }
     );
 
+    // Setting the on click handler for the File element
     $(".search-result").on('click', fileClick);
 
-    /* ... Function that initiates loading ... */
+    /**
+     * Function that initiates loading
+    */
     function setLoading()
     {
+        // Make the root container unclickable and faded
         $("#root-container").addClass("loading-opacity");
+        // Display the loader container
         $("#load-wrapper").show();
     }
 
-    /* ... Function that completes loading ... */
+    /**
+     * Function that completes loading
+    */
     function doneLoading()
     {
+        // Hide the loader container
         $("#load-wrapper").fadeOut("slow");
+        // Restore the root container
         $("#root-container").removeClass("loading-opacity");
     }
 
-    /* ... Function that handles when undo is pressed in a workspace ... */
+    /**
+     * Function that handles when remove button is pressed on the items in a workspace(file inside collection)
+     * @params Event eventObject:  The clicked item event
+    */
     function workspaceUndo()
     {
+        // Getting the display that the element is found in
         var theWorkspaceDisplay = $(this).parent().parent().parent();
-        if(theWorkspaceDisplay.hasClass("theReceiver"))
-            $(".theGiver").prev().find(".undo-button").addClass("inactive");
-        else if(theWorkspaceDisplay.hasClass("theGiver"))
-            if((wpActions[$(".theReceiver").parent().attr("id")] != null) && wpActions[$(".theReceiver").parent().attr("id")].undoFrom == "sorting-external")
-                if(wpActions[$(".theReceiver").parent().attr("id")].fromCancel == false)
-                    $(".theReceiver").prev().find(".undo-button").addClass("inactive");
 
+        // Deactivating the undo button on the giver display, 
+        // Only if the most recent action of this current display was receiving a ui-sortable  element from giver display
+        if(theWorkspaceDisplay.hasClass("theReceiver"))
+        {
+            if((wpActions[$(".theGiver").parent().attr("id")] != null) && wpActions[$(".theGiver").parent().attr("id")].undoFrom == "sorting-external")
+            {
+                if(wpActions[$(".theGiver").parent().attr("id")].fromCancel == false)
+                    $(".theGiver").prev().find(".undo-button").addClass("inactive").prop("disabled", true);
+            }
+        }
+        
+        // Deactivating the undo button on the receiver display, 
+        // Only if the most recent action of this current display was giving out a ui-sortable  element to receiver display
+        else if(theWorkspaceDisplay.hasClass("theGiver"))
+        {
+            if((wpActions[$(".theReceiver").parent().attr("id")] != null) && wpActions[$(".theReceiver").parent().attr("id")].undoFrom == "sorting-external")
+            {
+                if(wpActions[$(".theReceiver").parent().attr("id")].fromCancel == false)
+                    $(".theReceiver").prev().find(".undo-button").addClass("inactive").prop("disabled", true);
+            }
+        }
+        // Make the previous temporarily hidden element, permanently hidden
         theWorkspaceDisplay.find(".temporarily-hidden").addClass("permanently-hidden");
+        // Remove the temporarily hidden class from the permanently hidden items
         theWorkspaceDisplay.find(".permanently-hidden").removeClass("temporarily-hidden");
 
         itemsToUndo_2.undoFrom = "cancel";
 
+        // Resetting this display's undoFrom property 
         if(itemsToUndo_3[theWorkspaceDisplay.parent().attr("id")] != null)
             itemsToUndo_3[theWorkspaceDisplay.parent().attr("id")].undoFrom = "";
 
         if(theWorkspaceDisplay.parent().attr("id") != "single-mode")
             wpActions[theWorkspaceDisplay.parent().attr("id")] = { items: [], undoFrom: "", fromCancel: true};
+
         $(this).parent().parent().addClass("temporarily-hidden");
-        theWorkspaceDisplay.prev().find(".undo-button, .save-deck").removeClass("inactive");
+
+        // Activate this display's undo and save button
+        theWorkspaceDisplay.prev().find(".undo-button, .save-deck").removeClass("inactive").prop("disabled", false);
     }
 
-    /* ... Function that handles the page clicking event, It highlights the page clicked ... */
+    /**
+     * Handles the page clicking event, It highlights the page clicked
+     * @params Event eventObject:  The clicked item event
+    */
     function pageClick()
     {
         var thisPage = $(this);
@@ -118,60 +191,78 @@ function mainThread(originalArray, filesArray, fileMasker)
         thisPage.toggleClass("pageSelected");
         var idNum = thisPage.attr("id").split('-')[1];
 
+        // Selecting or Deselecting it's corresponding page inside Gallery view
         if(thisPage.hasClass("pageSelected"))
             $("#page_"+idNum).parent().next().children()[0].checked = true;
         else
             $("#page_"+idNum).parent().next().children()[0].checked = false;
 
+        // If select-all was active, clicking a page deactivates select-all
         if(document.getElementById('select-all-pages').checked)
             document.getElementById('select-all-pages').checked = false;
 
+        // If after clicking this page, all pages are now selected, then activate select-all
         else if($("#filePreviewGrid .pageDisplayItem").length == $(".pageSelected").length)
             document.getElementById('select-all-pages').checked = true;
-        
     }
 
-    /* ... ... */
+    /**
+     * Handles the gallery-view page clicking event, It highlights the page and brings it into the single view
+     * @params Event eventObject:  The clicked item event
+     */
     function galleryPageClick()
     {
         var thisPage = $(this);
 
+        // Removes this class from all other elements, to leave only this selected item 
         $(".galleryPageSelected").removeClass("galleryPageSelected");
         thisPage.toggleClass("galleryPageSelected");
 
+        // Both the next and previous buttons are hidden then bring them into view
         if((window.getComputedStyle($("#prevbtn-container")[0]).display == window.getComputedStyle($("#nextbtn-container")[0]).display) && (window.getComputedStyle($("#prevbtn-container")[0]).display == "none"))
             $("#prevbtn-container, #nextbtn-container").show();
 
-        
+        // Remove all previous contents of the preview container and append the current page clicked
         $("#PagePreviewContainer").empty();
         $("#PagePreviewContainer").append(
             $("<img>").attr({"src": thisPage.find(".PagePreviewed").attr("src"), "class": "singlePage "+thisPage.children(":first").attr("id")})
         );
 
+        // If this page is the first, hide the "previous button" otherwise show it
         if($("#page_" +(parseInt(thisPage.find(".PagePreviewed").attr("id").split('_')[1]) - 1)).length == 0)
             $("#prevbtn-container").hide();
         else
             $("#prevbtn-container").show();
 
+        // If this page is the last, hide the "next button" otherwise show it
         if($("#page_" +(parseInt(thisPage.find(".PagePreviewed").attr("id").split('_')[1]) + 1)).length == 0)
             $("#nextbtn-container").hide();
         else
             $("#nextbtn-container").show();
     }
 
-    /* ... Function that displays the pages from the array of image-data passed ... */
+    /**
+     * Displays all pages from the file using the image data of the pages
+     * @param {String} file_name The file name
+     * @param {Array.String} pagesArray Array of image data of each page
+     */
     function displayPagesFromData(file_name, pagesArray)
     {
+        // Getting the key that maps to this file name given
         var theMask = Object.keys(fileMasker).find(key => fileMasker[key] === file_name);
+
+        // Looping through the array of pages and displaying the page data
         pagesArray.forEach(
             function(item, index)
             {
+                // Appending the page element to the Preview Grid in List View
                 $("#filePreviewGrid").append(
                     $("<div></div>").attr({"id": theMask+"-"+ (index+1), "class": "pageDisplayItem"}).append(
                         $("<img>").attr({"src": item, "id": "page-"+ (index+1), "class": "filePagePreviewed"}),
                         $("<div></div>").attr({"class": "pageNumber"}).text(index+1)
                     )    
                 );
+                // Appending the page element to the Preview List in Gallery View
                 $("#PagesListContainer").append(
                     $("<div></div>").attr({"class": "wholeGPageContainer"}).append(
                         $("<div></div>").attr({"id": theMask+"-"+ (index+1), "class": "pageDisplayItem-1"}).append(
@@ -185,40 +276,49 @@ function mainThread(originalArray, filesArray, fileMasker)
                 );
             }
         );
-
+        
+        // On click handling for gallery view checkbox
         $(".tickPage").unbind('click').bind('click',
             function()
             { 
                 var idNum = $(this).parent().prev().find(".PagePreviewed").attr("id").split("_")[1];
+                // Trigger the click to it's corresponding page in the List view
                 $("#page-"+idNum).parent().trigger('click');
             }
         );
 
-        // Selecting the page
+        // On click handling when a List-view page is clicked 
         $("#filePreviewGrid .pageDisplayItem").on('click', pageClick);
 
-        // Selecting the page from gallery view
+        // On click handling when a Gallery-view page is clicked
         $(".pageDisplayItem-1").on('click', galleryPageClick);
 
+        // Gallery-view mode is active, trigger it's handler
         if(document.getElementById("gallery-view").checked)
-        {
             $("#gallery-view").trigger('click');
-            document.getElementById("gallery-view").checked = true;
-        }
     }
 
+    /**
+     * Contains the page elements' id, as the properties and their offsets from parent div as the values
+     * @type {Object}
+     */
     var pagesOffsets = {};
 
-    /* ... Function that handles the file click event, It highlights the file clicked ... */
+    /**
+     * Handles the file click event, It highlights the file clicked and displays it's pages on the previewer
+     * @params Event eventObject:  The clicked item event
+     */
     function fileClick()
     {
         var thisFile = $(this);
         firstTimeGalleryView = true;
         pagesOffsets = {};
+        // Resetting the scroll position
         $("#PagesListContainer")[0].scrollLeft = 0;
-        // Clear the viewer Grid
+        // Clear the viewer Grids
         $("#filePreviewGrid, #PagePreviewContainer, #PagesListContainer").empty();
 
+        // Hide all currently un-needed items from display
         $("#select-all-pages, #select-all-pages-label, #list-view, #list-view-label, #gallery-view, #gallery-view-label").hide();
         $("#prevbtn-container, #nextbtn-container").hide();
         $("#select-multiple, .numberRanges-labels, .numberRanges").hide();
@@ -226,18 +326,18 @@ function mainThread(originalArray, filesArray, fileMasker)
 
         if(thisFile.hasClass("fileSelected"))
         {
-            var nameOfFile = fileMasker["mask_"+(parseInt(thisFile.attr("id").split('-')[1]) - 1)];
+            var masker = "mask_"+(parseInt(thisFile.attr("id").split('-')[1]) - 1);
+            // Retrieving the file name 
+            var nameOfFile = fileMasker[masker];
             //nameOfFile = nameOfFile.replace("&amp;","&");
 
-            var fileExtension = nameOfFile.slice(nameOfFile.indexOf('.'), nameOfFile.length);
+            var fileExtension = nameOfFile.split('.')[nameOfFile.split('.').length - 1];
 
             // remove selected from all other file items, to leave "this" as the only one selected
             $(".search-result").removeClass("fileSelected");
             thisFile.addClass("fileSelected");
 
-            var masker = Object.keys(fileMasker).find(key => fileMasker[key] === nameOfFile);
-
-            if(fileExtension === ".mp4")
+            if(fileExtension.toLowerCase() === "mp4")
             {
                 if(document.getElementById("gallery-view").checked)
                     $("#list-view").trigger('click');
@@ -251,7 +351,7 @@ function mainThread(originalArray, filesArray, fileMasker)
                     )
                 );
             }
-            else if(fileExtension == ".png" || fileExtension == ".jpg")
+            else if(fileExtension.toLowerCase() == "png" || fileExtension.toLowerCase() == "jpg")
             {
                 if(document.getElementById("gallery-view").checked)
                     $("#list-view").trigger('click');
@@ -259,11 +359,13 @@ function mainThread(originalArray, filesArray, fileMasker)
                 $("#filePreviewGrid").removeClass("videoOnDisplay");
                 $("#filePreviewGrid").removeClass("fileOnDisplay");
                 $("#filePreviewGrid").addClass("imageOnDisplay");
+                $("#filePreviewGrid").append( $("<img>").attr({"id": masker, "src": "files/"+ nameOfFile, "class": "image-file"}));
             }
-            else
+            else if( fileExtension.toLowerCase() === "pdf" )
             {
                 document.getElementById("select-all-pages").checked = false;
                 
+                // Unhide the necessary items
                 $("#select-all-pages, #select-all-pages-label, #list-view, #list-view-label, #gallery-view, #gallery-view-label").show();
                 $("#select-multiple, .numberRanges-labels, .numberRanges").show();
                 setLoading();                    
@@ -271,10 +373,12 @@ function mainThread(originalArray, filesArray, fileMasker)
                 $("#filePreviewGrid").removeClass("imageOnDisplay");
                 $("#filePreviewGrid").addClass("fileOnDisplay");
 
+                // If the array has more than 1 items then use pdf.js to render the file pages
                 if(filesArray[masker].length < 2)
                 {
                     showAllPagesFromPdf("files/" + nameOfFile, nameOfFile);
                 }
+                // Otherwise, the pages have already been rendered, thus display them from the image data stored
                 else
                 {
                     displayPagesFromData(nameOfFile, filesArray[masker]);
@@ -284,18 +388,32 @@ function mainThread(originalArray, filesArray, fileMasker)
         }  
     }
 
-    /* ... Function that displays the first page of file as the file's cover page ... */
+
+    /**
+     * Displays the first page of file as the file's cover page
+     * @param {String} item The full file name
+     * @param {Number} index The index number of the file
+     * @param {String} filename The name of the file without its extension
+     * @param {String} itsExtension The file extension
+     * @param {Number} idToRender The id of the element to render the file cover page on
+     */
     function displayFiles(item, index, filename, itsExtension, idToRender)
     {
-        if(itsExtension == "mp4")
+        if(itsExtension.toLowerCase() == "mp4")
         {
             document.getElementById("file-"+(index+1)).outerHTML = "<video id=\"file-" + (index+1) + "\"></video>";
             
             $("#file-"+(index+1)).attr({"src": "files/"+item, "class": "result-file"});
             
         }
+        else if(itsExtension.toLowerCase() == "png" || itsExtension.toLowerCase() == "jpg")
+        {
+            document.getElementById("file-"+(index+1)).outerHTML = "<img id=\"file-" + (index+1) + "\">";
+            
+            $("#file-"+(index+1)).attr({"src": "files/"+item, "class": "result-file"});
+        }
         // Need to figure out how to display ppt, maybe just convert ppt to pdf on back-end
-        else if( itsExtension == "pptx")
+        else if( itsExtension.toLowerCase() == "pptx")
         {
             
         }
@@ -306,7 +424,12 @@ function mainThread(originalArray, filesArray, fileMasker)
         }
     }
 
-    /* ... Async function that gets the pdf document and loops to render all pages from file ... */
+
+    /**
+     * Gets the pdf document using pdf.js and loops to render all pages from the file
+     * @param {String} pdf_url The url/source of the file
+     * @param {String} file_name The name of the file
+     */
     async function showAllPagesFromPdf(pdf_url, file_name)
     {
         // get handle of pdf document
@@ -316,23 +439,29 @@ function mainThread(originalArray, filesArray, fileMasker)
         }
         catch(error)
         {
-            //alert(error.message);
+            alert(error.message);
             doneLoading();
         }
 
         // total pages in pdf
         TOTAL_PAGES = PDF_DOC.numPages;
 
+        /**
+        * Array of promises that try to render a page
+        * @type {Array.<(Promise)>}
+        */
         var pagePromises = [];
 
         for(let i = 0; i < TOTAL_PAGES; i++)
         {
+            // Using a temporary invisible canvas to render the page
             $("body").append(
                 $("<canvas></canvas>").attr({"id": "canvasToRemove-"+i, "class": "canvases-to-remove", "width": "580"}).css("display", "none")
             );
             pagePromises.push(showPage(document.querySelector("#canvasToRemove-"+i), i+1));
         }
 
+        // When all pages are done being rendered, get their image data and display the pages using the images
         Promise.all(pagePromises).then(
             function()
             {
@@ -340,6 +469,7 @@ function mainThread(originalArray, filesArray, fileMasker)
                 filesArray[masker] = [];
                 for(let kh = 0; kh < TOTAL_PAGES; kh++)
                 {
+                    // Storing the image data from canvas
                     filesArray[masker].push(document.getElementById("canvasToRemove-"+kh).toDataURL("image/png"));
 
                     $("#filePreviewGrid").append(
@@ -362,39 +492,49 @@ function mainThread(originalArray, filesArray, fileMasker)
                     $("#canvasToRemove-"+kh).remove();
                 }
 
+                // On click handling for gallery view checkbox
                 $(".tickPage").unbind('click').bind('click',
                     function()
                     { 
                         var idNum = $(this).parent().prev().find(".PagePreviewed").attr("id").split("_")[1];
+                        // Trigger the click to it's corresponding page in the List view
                         $("#page-"+idNum).parent().trigger('click');
                     }
                 );
 
-                // Selecting the page
+                // On click handling when a List-view page is clicked
                 $("#filePreviewGrid .pageDisplayItem").on('click', pageClick);
                 
-                // Selecting the page from gallery view
+                // On click handling when a Gallery-view page is clicked
                 $(".pageDisplayItem-1").on('click', galleryPageClick);
 
+                // Gallery view is active, trigger it's handler
                 if(document.getElementById("gallery-view").checked)
-                {
                     $("#gallery-view").trigger('click');
-                    document.getElementById("gallery-view").checked = true;
-                }
                 
                 doneLoading();
             }
         ).catch(doneLoading);
     }
 
-    /* ... Async function that displays the first page as the cover page for the file ... */
+
+    /**
+     * Displays the first page as the cover page for the file
+     * @param {String} pdf_url The url/source of the file
+     * @param {Number} fileID The id of the element to be rendered on
+     * @param {String} fileName The name of the file
+     * @param {Boolean} hasImage States whether the file has been rendered yet
+     * @returns {Promise} Promise object, obtained from "showPage" function 
+     */
     async function showPDF(pdf_url, fileID, fileName, hasImage)
     {
+        // If the file has been rendered before, display it using image data stored
         if(hasImage)
         {
             var masker = Object.keys(fileMasker).find(key => fileMasker[key] === fileName+".pdf");
             $(fileID).attr("src", filesArray[masker][0]);
         }
+        // Otherwise render the file
         else
         {
             // get handle of pdf document
@@ -412,7 +552,13 @@ function mainThread(originalArray, filesArray, fileMasker)
         }
     }
 
-    /* ... Async function that renders the page number given on the canvas passed ... */
+
+    /**
+     * Renders the page number given, onto the canvas passed
+     * @param {Node} _CANVAS The canvas element to render on
+     * @param {Number} page_no The page number to render
+     * @returns {Promise} Promise object, resolves when page is rendered
+     */
     async function showPage(_CANVAS, page_no)
     {                    
         // get handle of page
@@ -457,9 +603,17 @@ function mainThread(originalArray, filesArray, fileMasker)
     }
 
 
-    /* ... Function that returns a boolean stating whether the last modified date matches ... */
+    /**
+     * Determines whether the last modified date matches
+     * @param {String} fileNameGiven The name of the file
+     * @returns Boolean that states if there is a match
+     */
     function matchLastModTag(fileNameGiven)
     {
+        /**
+         * Getting the match condition chosen by User
+         * @type {String}
+         */
         var LastModValue = $("#lastMod-tag").val();
 
         if(LastModValue == "Last Modified")
@@ -470,16 +624,26 @@ function mainThread(originalArray, filesArray, fileMasker)
         {
             var theCondition = false;
 
+            // Looking for the file and it's last modified content from Original array
             originalArray.forEach(
                 function(item)
                 {
                     if(item.file_name == fileNameGiven)
                     {
+                        // Getting the current day's date
                         var today = new Date();
-                        todayDate = today.getDate();
-                        todayMonth = today.getMonth() + 1;
-                        todayYear = today.getFullYear();
+                        var todayDate = today.getDate();
+                        // Month is 0 indexed
+                        var todayMonth = today.getMonth() + 1;
+                        var todayYear = today.getFullYear();
 
+                        /**
+                         * Contains the last modified data of the file
+                         * @type {Object}
+                         * @property {String} date - The Date the file was modified
+                         * @property {String} month - The month the file was modified
+                         * @property {String} year - The year the file was modified
+                         */
                         var lastModObject = item.last_modified;
 
                         if(LastModValue == "within the last day")
@@ -487,9 +651,10 @@ function mainThread(originalArray, filesArray, fileMasker)
                             var previous = new Date();
                             previous.setDate(todayDate - 1);
                             
+                            // If the dates are the same, checking if month and year match
                             if(lastModObject.date == todayDate)
                                 theCondition = (lastModObject.month == todayMonth) && (lastModObject.year == todayYear);
-
+                            // If file's modified date matches previous date, checking if month and year match
                             else if(lastModObject.date == previous.getDate())
                                 theCondition = (lastModObject.month == previous.getMonth() + 1) && (lastModObject.year == previous.getFullYear());
                         }
@@ -498,6 +663,7 @@ function mainThread(originalArray, filesArray, fileMasker)
                             var previous = new Date();
                             previous.setDate(todayDate - 7);
 
+                            // If file's modified month is within range, checking if year matches and date is within range
                             if(lastModObject.month == previous.getMonth()+ 1)
                                 theCondition = (lastModObject.date >=  previous.getDate()) && (lastModObject.year == previous.getFullYear());
                             
@@ -510,6 +676,7 @@ function mainThread(originalArray, filesArray, fileMasker)
                             var previous = new Date();
                             previous.setMonth(todayMonth - 2);
                             
+                            // If file's modified month is within range, checking if year matches and date is within range
                             if(lastModObject.month == previous.getMonth()+ 1)
                                 theCondition = (lastModObject.date >=  previous.getDate()) && (lastModObject.year == previous.getFullYear());
                             
@@ -517,34 +684,40 @@ function mainThread(originalArray, filesArray, fileMasker)
                                 theCondition = (lastModObject.date <=  todayDate) && (lastModObject.year == previous.getFullYear());
                             
                         }
-                        
                         else if(LastModValue == "within the last 6 months")
                         {
                             var previous = new Date();
                             previous.setMonth(todayMonth - 7);
                             
+                            // If 6 months back, falls into the previous year
                             if(previous.getFullYear() == todayYear - 1)
                             {
+                                // If the file's modified year is the previous year
                                 if(lastModObject.year == previous.getFullYear())
                                 {
+                                    // If the file's modified month is within the 6 months range, condition is true
                                     if(lastModObject.month > previous.getMonth() + 1)
                                         theCondition = true;
+                                    // Otherwise checking that the date is within range 
                                     else if(lastModObject.month == previous.getMonth() + 1)
                                         theCondition = lastModObject.date >=  previous.getDate();
                                 }
                                 else if(lastModObject.year == todayYear)
                                 {
+                                    // If the file's modified month is within the 6 months range, condition is true
                                     if(lastModObject.month < todayMonth)
                                         theCondition = true;
+                                    // Otherwise checking that the date is within range
                                     else if(lastModObject.month == todayMonth)
                                         theCondition = lastModObject.date <=  previous.getDate();
                                 }
                             }
                             else
                             {
+                                // If the file's modified month is within the 6 months range, condition is true
                                 if((lastModObject.month > previous.getMonth() + 1) && lastModObject.month < todayMonth)
                                     theCondition = true;
-                                
+                                // Otherwise checking that the date is within range
                                 else if(lastModObject.month == previous.getMonth() + 1)
                                     theCondition = (lastModObject.date >=  previous.getDate());
                                 
@@ -552,23 +725,27 @@ function mainThread(originalArray, filesArray, fileMasker)
                                     theCondition = (lastModObject.date <=  todayDate);
                             }
                         }
-
                         else
                         {
                             var previous = new Date();
                             previous.setFullYear(todayYear - 1);
                             
+                            // If the file's modified year is the previous year
                             if(lastModObject.year == previous.getFullYear())
                             {
+                                // If the file's modified month is within the 12 months range, condition is true
                                 if(lastModObject.month > previous.getMonth() + 1)
                                     theCondition = true;
+                                // Otherwise checking that the date is within range
                                 else if(lastModObject.month == previous.getMonth() + 1)
                                     theCondition = lastModObject.date >=  previous.getDate();
                             }
                             else if(lastModObject.year == todayYear)
                             {
+                                // If the file's modified month is within the 12 months range, condition is true
                                 if(lastModObject.month < todayMonth)
                                     theCondition = true;
+                                // Otherwise checking that the date is within range
                                 else if(lastModObject.month == todayMonth)
                                     theCondition = lastModObject.date <=  previous.getDate();
                             }
@@ -582,9 +759,18 @@ function mainThread(originalArray, filesArray, fileMasker)
         }
     }
 
-    /* ... Function that returns a boolean stating whether the extensions matches ... */
+    
+    /**
+     * Determines whether the extensions match
+     * @param {String} extension 
+     * @returns Boolean that states if there is a match
+     */
     function matchFileTypeTag(extension)
     {
+        /**
+         * Getting the match condition chosen by User
+         * @type {String}
+         */
         var fileTagValue = $("#fileType-tag").val();
 
         if(fileTagValue == "File Type")
@@ -596,15 +782,21 @@ function mainThread(originalArray, filesArray, fileMasker)
             var extFromTag = fileTagValue.substring(fileTagValue.indexOf("(")+2).replace(")", "");
 
             if(fileTagValue.includes("jpg/png"))
-                return extFromTag.split("/")[0] == extension || extFromTag.split("/")[1] == extension;
+                return extFromTag.split("/")[0] == extension.toLowerCase() || extFromTag.split("/")[1] == extension.toLowerCase();
             else
-                return extFromTag == extension;
+                return extFromTag == extension.toLowerCase();
         }
     }
 
-    /* ... Function that returns a boolean stating wether the item to be filtered passes the match conditions ... */
+
+    /**
+     * Determines whether the item to be filtered passes the match conditions
+     * @param {String} item The file name key passed from the array
+     * @returns Boolean that states if there is a match
+     */
     function checkMatchWithInput(item)
     {
+        // Getting the file name
         var unmasked = fileMasker[item];
         fileNameArray = unmasked.split(".");
         
@@ -616,11 +808,17 @@ function mainThread(originalArray, filesArray, fileMasker)
         return  matchLastModTag(unmasked) && matchFileTypeTag(itsExtension) && filename.toLowerCase().includes(matcher.toLowerCase());
     }
 
-    /* ... Function that filters the file array according to the value from the UI input element ... */
+    
+    /**
+     * Filters the file array according to the value from the input search field
+     * @param {Event} e - The event object passed from the input field
+     */
     function filterValues(e)
     {
         // Getting the value typed
         matcher = e.target.value;
+
+        // Array containing the filtered keys
         var resultingMatches = Object.keys(filesArray).filter(checkMatchWithInput);
 
         setLoading();
@@ -645,24 +843,29 @@ function mainThread(originalArray, filesArray, fileMasker)
                 );
                 
                 displayFiles(theItem, id_num-1, file_Name, intmLast, "#file-"+id_num);
-                $(".search-result").unbind('click').bind('click', fileClick);
             }
         );
+
+        $(".search-result").unbind('click').bind('click', fileClick);
 
         Promise.all(filePromises).then(doneLoading).catch(
             function()
             {
-                console.log("there seems to be a problem sir!");
+                alert("At least one of the files could not be rendered");
                 doneLoading();
-            });  
+            }
+        );  
     }
 
-    //var pdf_documents = [];
-
+    /**
+     * The search field input element
+     * @type {Node}
+     */
     var searchField = document.querySelector("#search-field-2");
     
     searchField.addEventListener('input', filterValues);
 
+    // On change handling for the filter dropdowns
     $("#fileType-tag, #lastMod-tag").change(
         function()
         {
@@ -671,7 +874,12 @@ function mainThread(originalArray, filesArray, fileMasker)
         }
     );
 
-    // An array containing items to undo
+    /**
+     * Holds the item and which action to undo
+     * @type {Object}
+     * @property {String} undoFrom - Determines action to undo 
+     * @property {Array} items - Stores item to undo, its initial position, and reference elements
+     */
     var itemsToUndo = {
         undoFrom: "",
         items: []
@@ -679,11 +887,12 @@ function mainThread(originalArray, filesArray, fileMasker)
 
     $("#package-navbar .undo-button").css("margin", "0px 8px 0px 8px").show();
 
+    // Handling when Enter key is pressed inside the name edit field
     $("#deckName").on('keyup', 
         function (e) 
         {
             if (e.key === 'Enter' || e.keyCode === 13)
-            $("#done-edit").trigger('click');
+                $("#done-edit").trigger('click');
         }
     );
 
@@ -694,22 +903,24 @@ function mainThread(originalArray, filesArray, fileMasker)
             $(this).hide();
             $("#deckName-written").hide();
             $("#deckName").val($("#deckName-written").text());
-            $("#done-edit, #deckName").show()
-            
+            $("#done-edit, #deckName").show();   
         }
     );
-
+    // Click handler for done editing button
     $("#done-edit").on('click',
         function()
         {
             $(this).hide();
             $("#deckName").hide();
             $("#deckName-written").text($("#deckName").val());
-            $("#pencil-edit, #deckName-written").show()
+            $("#pencil-edit, #deckName-written").show();
         }
     );
 
-    // Global list of objects(workspace and their contents)
+    
+    /**
+     * @type {Array.<{fileName: String, exportAs: String, fileContents: String[], type: String, tags: String[]}>} :- Global list of objects(workspace and their contents)
+     */
     let Workspaces = [];
 
     // Add three divs to all view containers
@@ -726,6 +937,7 @@ function mainThread(originalArray, filesArray, fileMasker)
         $("<div></div>").attr({"class": "workspace-bottom-navbar"})
     );
 
+    // On click handling for pressing Enter after finishing name editing in a workspace
     $(".workspace-name").on('keyup', 
         function (e) 
         {
@@ -734,7 +946,7 @@ function mainThread(originalArray, filesArray, fileMasker)
         }
     );
 
-    // Click handler for the pencil edit button
+    // Click handler for the pencil edit  in a workspace
     $(".pencil-edit").on('click',
         function()
         {
@@ -747,6 +959,7 @@ function mainThread(originalArray, filesArray, fileMasker)
         }
     );
 
+    // Click handler for the done edit  in a workspace
     $(".done-edit").on('click',
         function()
         {
@@ -754,18 +967,21 @@ function mainThread(originalArray, filesArray, fileMasker)
             $(this).next().next().hide();
             $(this).next().text($(this).next().next().val());
             $(this).parent().find(".save-deck").show();
-            $(this).parent().find(".save-deck").removeClass("inactive");
+            $(this).parent().find(".save-deck").removeClass("inactive").prop("disabled", false);
             $(this).prev().show();
             $(this).next().show();
         }
     );
 
+    // On click handling for the previous button, in Gallery-view mode
     $("#prevbtn-container").click(
         function()
         {
+            // If the next button was hidden, display it
             if(window.getComputedStyle($("#nextbtn-container")[0]).display == "none")
                 $("#nextbtn-container").show();
 
+            // The page previously on view
             var theSinglePage = $(".singlePage");
 
             theSinglePage.animate(
@@ -775,28 +991,32 @@ function mainThread(originalArray, filesArray, fileMasker)
                 },
             "slow");
             
+            // The future page after this currently page gets displayed
             var nextSinglePage;
             setTimeout( 
                 function() 
                 {
+                    // The page currently coming into view
                     var nextPage = $("#page_" + (parseInt(theSinglePage[0].classList[1].split('_')[1]) - 1));
                     var nextPageOffset = pagesOffsets[("page_" + (parseInt(theSinglePage[0].classList[1].split('_')[1]) - 1))];
 
                     var pagesList = $("#PagesListContainer")[0];
+
+                    // Procedure to scroll the currently highlighted page into view
+                    // Uses difference between the initial offsets and the container offset
                     var offsetDifference = nextPageOffset - scrollAmount;
-                    
                     if(offsetDifference < 10)
                     {
                         offsetDifference = offsetDifference * (-1);
                         var quot = ~~((offsetDifference + 10)/100);
                         quot++;
-                        pagesList.scrollLeft = pagesList.scrollLeft - (quot*120);
+                        pagesList.scrollLeft = pagesList.scrollLeft - (quot*105);
                     }
                     else if(offsetDifference > 480)
                     {
                         var quot = ~~((offsetDifference - 480)/100);
                         quot++;
-                        pagesList.scrollLeft = pagesList.scrollLeft + (quot*120);
+                        pagesList.scrollLeft = pagesList.scrollLeft + (quot*105);
                     }
 
                     nextPage.parent().trigger('click');
@@ -805,23 +1025,23 @@ function mainThread(originalArray, filesArray, fileMasker)
                     nextSinglePage.animate({ left: "-60px"},"fast");
                     nextSinglePage.animate({ left: "+=60px", opacity: "1"},"slow");
                     
-                    //console.log($("page_" +(parseInt(nextPage.attr("id").split('_')[1]) + 1)));
+                    // The future page is undefined, limit has been reached thus hide this button
                     if($("#page_" +(parseInt(nextPage.attr("id").split('_')[1]) - 1)).length == 0)
-                    {
                         $("#prevbtn-container").hide();
-                    }
                 },
             200);
         }
     );
 
-
+    // On click handling for the next button, in Gallery-view mode
     $("#nextbtn-container").click(
         function()
         {
+            // If the previous button was hidden, display it
             if(window.getComputedStyle($("#prevbtn-container")[0]).display == "none")
                 $("#prevbtn-container").show();
 
+            // The page previously on view
             var theSinglePage = $(".singlePage");
 
             theSinglePage.animate(
@@ -831,27 +1051,32 @@ function mainThread(originalArray, filesArray, fileMasker)
                 },
             "slow");
             
+            // The future page after this currently page gets displayed
             var nextSinglePage;
             setTimeout( 
                 function() 
                 {
+                    // The page currently coming into view
                     var nextPage = $("#page_" + (parseInt(theSinglePage[0].classList[1].split('_')[1]) + 1));
                     var nextPageOffset = pagesOffsets[("page_" + (parseInt(theSinglePage[0].classList[1].split('_')[1]) + 1))];
 
                     var pagesList = $("#PagesListContainer")[0];
+
+                    // Procedure to scroll the currently highlighted page into view
+                    // Uses difference between the initial offsets and the container offset
                     var offsetDifference = nextPageOffset - scrollAmount;
                     if(offsetDifference > 480)
                     {
                         var quot = ~~((offsetDifference - 480)/100);
                         quot++;
-                        pagesList.scrollLeft = pagesList.scrollLeft + (quot*120);
+                        pagesList.scrollLeft = pagesList.scrollLeft + (quot*105);
                     }
                     else if(offsetDifference < 10)
                     {
                         offsetDifference = offsetDifference * (-1);
                         var quot = ~~((offsetDifference + 10)/100);
                         quot++;
-                        pagesList.scrollLeft = pagesList.scrollLeft - (quot*120);
+                        pagesList.scrollLeft = pagesList.scrollLeft - (quot*105);
                     }
 
                     nextPage.parent().trigger('click');
@@ -860,16 +1085,15 @@ function mainThread(originalArray, filesArray, fileMasker)
                     nextSinglePage.animate({ left: "60px"},"fast");
                     nextSinglePage.animate({ left: "-=60px", opacity: "1"},"slow");
                     
-                    
+                    // The future page is undefined, limit has been reached thus hide this button
                     if($("#page_" +(parseInt(nextPage.attr("id").split('_')[1]) + 1)).length == 0)
-                    {
                         $("#nextbtn-container").hide();
-                    }
                 },
             200);
         }
     );
     
+    // Getting the amount scrolled 
     $("#PagesListContainer").on('scroll',
         function()
         {
@@ -880,22 +1104,26 @@ function mainThread(originalArray, filesArray, fileMasker)
         }
     );
 
-    // Making the view containers sortable
+    // Making the view container sortable
     $("#collectionViewer").sortable(
         {
             update: function(event, ui)
                     {
-                        ui.item.parent().prev().find(".undo-button").addClass("inactive");
+                        // Deactivate undo button when user sorts items
+                        ui.item.parent().prev().find(".undo-button").addClass("inactive").prop("disabled", true);
                     }
         }
     );
 
+    // On click handling for a workspace undo button
     $(".workspace-namer .undo-button").on('click',
         function()
         {
             var thisButton = $(this);
-            thisButton.parent().find(".save-deck").removeClass("inactive");
+            // Activate Save button
+            thisButton.parent().find(".save-deck").removeClass("inactive").prop("disabled", false);
 
+            // If the most recent action was adding a page, remove the added pages
             if((itemsToUndo_3[thisButton.parent().parent().attr("id")] != null) && itemsToUndo_3[thisButton.parent().parent().attr("id")].undoFrom == "insertPage")
             {
                 var addedItemsArray = itemsToUndo_3[thisButton.parent().parent().attr("id")].items;
@@ -913,13 +1141,19 @@ function mainThread(originalArray, filesArray, fileMasker)
                 // itemsToUndo_2.items[1] = the element node moved
                 // itemsToUndo_2.items[2] = the element node behind the one moved
                 // itemsToUndo_2.items[3] = New position of the moved element 
+
+                // Object containing undo information of this current workspace
                 var pack = wpActions[thisButton.parent().parent().attr("id")];
+
+                // When in two/three-view mode
                 if(pack != null)
                 {
-                    if(itemsToUndo_2.undoFrom == "sorting")
+                    if(pack.undoFrom == "sorting-within" || pack.undoFrom == "sorting-external")
                     {
-                        if(itemsToUndo_2.foreignFlag)
+                        // If the sorted element was passed to a different workspace
+                        if(pack.undoFrom == "sorting-external")
                         {
+                            // If this workspace is the one that gave out the element
                             if(thisButton.parent().next().hasClass("theGiver"))
                             {
                                 $(".theReceiver").children()[pack.items[3]].remove();
@@ -929,6 +1163,7 @@ function mainThread(originalArray, filesArray, fileMasker)
                                 else
                                     pack.items[2].insertAdjacentElement("afterEnd", pack.items[1]);
                             }
+                            // If this workspace is the one that received the element
                             else
                             {
                                 thisButton.parent().next().children()[pack.items[3]].remove();
@@ -938,8 +1173,10 @@ function mainThread(originalArray, filesArray, fileMasker)
                                 else
                                     pack.items[2].insertAdjacentElement("afterEnd", pack.items[1]);
                             }
-                            $(".theReceiver, .theGiver").prev().find(".undo-button").addClass("inactive");
+                            // Deactivate undo from both the giver and the receiver workspaces
+                            $(".theReceiver, .theGiver").prev().find(".undo-button").addClass("inactive").prop("disabled", true);
                         }
+                        // Otherwise the sorted element was moved within the same workspace
                         else
                         {
                             thisButton.parent().next().children()[pack.items[3]].remove();
@@ -950,12 +1187,14 @@ function mainThread(originalArray, filesArray, fileMasker)
                                 pack.items[2].insertAdjacentElement("afterEnd", pack.items[1]);
                         }
                     }
+                    // If the most recent action was removing a page
                     else if(pack.fromCancel)
                     {
                         thisButton.parent().next().find(".temporarily-hidden").removeClass("temporarily-hidden");
                         pack.fromCancel = false;
                     }   
                 }
+                // When in Single-view mode
                 else
                 {
                     if(itemsToUndo_2.undoFrom == "sorting")
@@ -971,30 +1210,55 @@ function mainThread(originalArray, filesArray, fileMasker)
                         thisButton.parent().next().find(".temporarily-hidden").removeClass("temporarily-hidden");
                 } 
             }
+
+            // Reset Undo information
             if(itemsToUndo_3[thisButton.parent().parent().attr("id")] != null)
-                itemsToUndo_3[thisButton.parent().parent().attr("id")].undoFrom = "";        
-            thisButton.addClass("inactive");
+                itemsToUndo_3[thisButton.parent().parent().attr("id")].undoFrom = "";
+
+            // Deactivate this undo button        
+            thisButton.addClass("inactive").prop("disabled", true);
         }
     );
     
-    var itemsToUndo_2 = {};
+    /**
+     * Contains Undo information for single mode view
+     * @type {Object}
+     * @property {String} undoFrom - Determines action to undo
+     * @property {Boolean} foreignFlag - Determines whether sorting was done within a workspace or between workspaces
+     * @property {Array} items - Stores item to undo, its initial position, and reference elements
+     */
+    var itemsToUndo_2 = { undoFrom: "", foreignFlag: false, items: [] };
+    /**
+     * Holds undo information specifically when new pages are inserted into a workspace
+     * @type {Object}
+     */
     var itemsToUndo_3 = {};
-    itemsToUndo_2.undoFrom = "";
-    itemsToUndo_2.foreignFlag = false;
-    itemsToUndo_2.items = [];
+    /**
+     * Holds undo information specifically when sorting is done on the workspaces
+     * @type {Object}
+     */
     var wpActions = {}
 
+    
     // Making the viewers sortable and connected to each to enable sort between
     $(".workspace-displayer").sortable(
         {
             connectWith: ".workspace-displayer",
             start: function(event, ui)
                     {
+                        // When in two/three-view mode
                         if(ui.item.parent().parent().attr("id") != "single-mode")
-                        {
-                            
+                        {                            
                             $(".workspace-displayer").removeClass("temporaryGiver");
-                            wpActions[ui.item.parent().parent().attr("id")] = { items: [], undoFrom: "", fromCancel: false};
+                            ui.item.parent().addClass("temporaryGiver");
+
+                            // If the field exists then reset it's items
+                            if(wpActions[ui.item.parent().parent().attr("id")] != null)
+                                wpActions[ui.item.parent().parent().attr("id")].items = [];
+                            //If the field doesn't exist, it is initialized  
+                            else
+                                wpActions[ui.item.parent().parent().attr("id")] = { items: [], undoFrom: "", fromCancel: false};
+                            
                             var pack = wpActions[ui.item.parent().parent().attr("id")];
                             var undoList = pack.items;
 
@@ -1002,9 +1266,8 @@ function mainThread(originalArray, filesArray, fileMasker)
                             undoList.push(ui.item.index());
                             undoList.push(ui.item[0]);
                             undoList.push(ui.item.prev()[0]);
-
-                            ui.item.parent().addClass("temporaryGiver");
                         }
+                        // When in single-view mode
                         else
                         {
                             itemsToUndo_2.items = [];
@@ -1016,48 +1279,67 @@ function mainThread(originalArray, filesArray, fileMasker)
                     },
             update: function(event, ui)
                     {
-                        ui.item.parent().prev().find(".save-deck, .undo-button").removeClass("inactive");
+                        // Activating the save and undo button
+                        ui.item.parent().prev().find(".save-deck, .undo-button").removeClass("inactive").prop("disabled", false);
+                        
                         itemsToUndo_2.undoFrom = "sorting";
+                        
+                        // If the field is defined, reset its info
                         if(itemsToUndo_3[ui.item.parent().parent().attr("id")] != null)
                             itemsToUndo_3[ui.item.parent().parent().attr("id")].undoFrom = "";
 
+                        // When in two/three-view mode
                         if(ui.item.parent().parent().attr("id") != "single-mode")
                         {
-                            var theGiverPack = wpActions[$(".temporaryGiver").parent().attr("id")];                            
+                            var theGiverPack = wpActions[$(".temporaryGiver").parent().attr("id")] || wpActions[$(".theGiver").parent().attr("id")];                            
 
+                            // If sorting remained within the workspace
                             if(!itemsToUndo_2.foreignFlag)
                             {
                                 theGiverPack.undoFrom = "sorting-within";
                                 theGiverPack.items.push(ui.item.index());
 
+                                // If this workspace gave an item to a neighbouring workspace, and changes are made in this workspace
+                                // The receiver's undo button gets deactivated
                                 if(ui.item.parent().hasClass("theGiver") && wpActions[$(".theReceiver").parent().attr("id")].undoFrom == "sorting-external")
-                                    $(".theReceiver").prev().find(".undo-button").addClass("inactive");
+                                    $(".theReceiver").prev().find(".undo-button").addClass("inactive").prop("disabled", true);
 
+                                // If this workspace received an item from a neighbouring workspace, and changes are made in this workspace
+                                // The giver's undo button gets deactivated
                                 else if(ui.item.parent().hasClass("theReceiver") && wpActions[$(".theGiver").parent().attr("id")].undoFrom == "sorting-external")
-                                    $(".theGiver").prev().find(".undo-button").addClass("inactive");
+                                    $(".theGiver").prev().find(".undo-button").addClass("inactive").prop("disabled", true);
 
                             }
                             else
                             {
+                                // Initializing undo information
                                 wpActions[ui.item.parent().parent().attr("id")] = { items: theGiverPack.items, undoFrom: "sorting-external", fromCancel: false };
+                                
                                 $(".workspace-displayer").removeClass("theGiver");
                                 $(".temporaryGiver").addClass("theGiver")
                                 $(".theGiver").removeClass("temporaryGiver");
+                                
+                                $(".workspace-displayer").removeClass("theReceiver");
+                                ui.item.parent().addClass("theReceiver");
+
                                 theGiverPack.undoFrom = "sorting-external";
                                 
                                 if(itemsToUndo_3[$(".theGiver").parent().attr("id")] != null)
                                     itemsToUndo_3[$(".theGiver").parent().attr("id")].undoFrom = "";
 
-                                $(".workspace-displayer").removeClass("theReceiver");
-                                ui.item.parent().addClass("theReceiver");
-                        
-                                $(".theGiver").prev().find(".save-deck, .undo-button").removeClass("inactive");
+                                // Activating the giver's undo and save button
+                                $(".theGiver").prev().find(".save-deck, .undo-button").removeClass("inactive").prop("disabled", false);
 
+                                // Workspace that's not the giver or the receiver
                                 var isolatedWorkspace = $(".workspace-displayer:not(.theGiver):not(.theReceiver):eq(1)");
 
+                                // If the isolated workspace still remembers sorting externaly
+                                // It's undo button is deactivated
                                 if(wpActions[isolatedWorkspace.parent().attr("id")] != null)
+                                {
                                     if(wpActions[isolatedWorkspace.parent().attr("id")].undoFrom == "sorting-external")
-                                    isolatedWorkspace.prev().find(".undo-button").addClass("inactive");
+                                        isolatedWorkspace.prev().find(".undo-button").addClass("inactive").prop("disabled", true);
+                                }
                             }
                         }
                         else
@@ -1071,7 +1353,7 @@ function mainThread(originalArray, filesArray, fileMasker)
         }
     );
 
-    // To be changed
+
     $("#single-mode .workspace-displayer").addClass("single-file-mode");
     
     // Looping through all bottom navigation bars and adding the select options
@@ -1092,26 +1374,31 @@ function mainThread(originalArray, filesArray, fileMasker)
         );
     }
 
+    // Handling on change for the export as dropdown
     $(".deck-to-export-options").change(
         function()
         {
-            $(this).parent().prev().prev().find(".save-deck").removeClass("inactive");
+            $(this).parent().prev().prev().find(".save-deck").removeClass("inactive").prop("disabled", false);
         }
     );
 
 
-    // The Save button on a viewer
+    // The Save button on a workspace viewer
     // When clicked it saves the content currently present
     $(".workspace-namer .save-deck").on('click',
         function()
         {
             setLoading();
             var thisButton = $(this);
+            // Removing the hidden elements
             thisButton.parent().next().find(".temporarily-hidden, .permanently-hidden").detach();
-            thisButton.parent().find(".undo-button").addClass("inactive");
+            // Deactivating the undo button
+            thisButton.parent().find(".undo-button").addClass("inactive").prop("disabled", true);
+            
             Workspaces.forEach(
                 function(item)
                 {
+                    // When necessary file is found, populate contents
                     if(item.fileName == thisButton.parent().next().next().find(".deck-to-view-options").val())
                     {
                         var theMask = Object.keys(fileMasker_1).find(key => fileMasker_1[key] === item.fileName);
@@ -1132,15 +1419,15 @@ function mainThread(originalArray, filesArray, fileMasker)
                             
                             var objectPushed = {
                                 fileFrom: fileMasker[theElement.classList[1]],
-                                pageNumber: theElement.firstChild.lastChild.innerHTML,
+                                pageNumber: theElement.firstChild.lastChild.innerHTML.replace("&amp;", "&"),
                                 imageData: theElement.firstChild.firstChild.nodeName.toLowerCase() == "video" ? 
-                                            theElement.firstChild.firstChild.getAttribute("src") + "-thisIsVideo":
+                                            theElement.firstChild.firstChild.getAttribute("src") + "-thisIsMedia":
                                             theElement.firstChild.firstChild.getAttribute("src")
                             }
                             item.fileContents.push(objectPushed);
 
-                            if(objectPushed.imageData.includes("-thisIsVideo"))
-                                videoFound = true
+                            if(objectPushed.imageData.includes("-thisIsMedia") || theElement.firstChild.classList.contains("imagePresent"))
+                                videoFound = true;
                         }
                         if(videoFound)
                             item.type = "powerpoint";
@@ -1160,42 +1447,12 @@ function mainThread(originalArray, filesArray, fileMasker)
                 }
             );
             doneLoading();
-            thisButton.addClass("inactive");
-        }
-    );
-
-    $("#tagInput").on('keyup',
-        function(e)
-        {
-            if(e.key === 'Enter' || e.keyCode === 13)
-            {
-                $("#tagsBatch").append(
-                    $("<div></div>").attr({"class": "upperTagContainer"}).append(
-                        $("<div></div>").attr({"class": "tagContent"}).text($("#tagInput")[0].value),
-                        $("<div></div>").attr({"class": "cancelContainer-2 deckItem"}).append(
-                            $("<div></div>").attr({"class": "removeTag"}).append(
-                                $("<img>").attr({"src": "images/cancelbtn.png", "class": "cancelImg"})
-                            )
-                        )
-                    )
-                );
-
-                $(".removeTag").unbind('click').bind('click',
-                    function()
-                    {
-                        $(this).parent().parent().detach();
-                        $("#single-mode").find(".save-deck").removeClass("inactive");
-                    }
-                );
-
-                $("#single-mode").find(".save-deck").removeClass("inactive");
-                $("#tagInput").val("");
-            }
+            thisButton.addClass("inactive").prop("disabled", true);
         }
     );
 
 
-    // Select options which determine which workspace to view
+    // Select dropdown which determine which workspace to view
     $(".deck-to-view-options").change(
         function()
         {
@@ -1218,7 +1475,7 @@ function mainThread(originalArray, filesArray, fileMasker)
             }
             else
             {
-                thisOption.parent().prev().prev().find(".undo-button, .save-deck").addClass("inactive");
+                thisOption.parent().prev().prev().find(".undo-button, .save-deck").addClass("inactive").prop("disabled", true);
                 thisOption.parent().prev().prev().children(":first").show();
                 thisOption.parent().prev().prev().find(".workspace-name-written").show();
                 thisOption.parent().prev().prev().find(".undo-button").show();
@@ -1258,8 +1515,8 @@ function mainThread(originalArray, filesArray, fileMasker)
                                 elementAdded.classList.add(Object.keys(fileMasker).find(key => fileMasker[key] === theWorkspace.fileContents[g].fileFrom));
                                 elementAdded.appendChild(
                                     $("<div></div>").attr({"class": "pageDisplayItem-2 deckItem deckLowerItem"}).append(
-                                        theWorkspace.fileContents[g].imageData.includes("-thisIsVideo") ?
-                                        $("<video>").attr({"src": theWorkspace.fileContents[g].imageData.substring(0, theWorkspace.fileContents[g].imageData.indexOf("-thisIsVideo")), "class": "filePagePreviewed-2"}) : 
+                                        theWorkspace.fileContents[g].imageData.includes("-thisIsMedia") ?
+                                        $("<video>").attr({"src": theWorkspace.fileContents[g].imageData.substring(0, theWorkspace.fileContents[g].imageData.indexOf("-thisIsMedia")), "class": "filePagePreviewed-2"}) : 
                                         $("<img>").attr({"src": theWorkspace.fileContents[g].imageData, "class": "filePagePreviewed-2"}),
                                         $("<div></div>").attr({"class": " mediumPageNumber pageNumber"}).text(theWorkspace.fileContents[g].pageNumber)
                                     )[0]
@@ -1271,18 +1528,6 @@ function mainThread(originalArray, filesArray, fileMasker)
                                         )
                                     )[0]
                                 );
-                                /* ... This prevented a user from viewing two files at once
-                                /* $("#itemNum-" + indexOfWorkspace + "-" + g).addClass("wholeSlideContainer-2 "+theWorkspace.fileContents[g].fileFrom).append(
-                                    $("<div></div>").attr({"class": "pageDisplayItem deckItem deckLowerItem"}).append(
-                                        $("<img>").attr({"src": theWorkspace.fileContents[g].imageData, "class": "filePagePreviewed-2"}),
-                                        $("<div></div>").attr({"class": "pageNumber"}).text(theWorkspace.fileContents[g].pageNumber)
-                                    ),
-                                    $("<div></div>").attr({"class": "cancelContainer deckItem"}).append(
-                                        $("<div></div>").attr({"class": "cancelBtn cancelBtn-scaled"}).append(
-                                            $("<img>").attr({"src": "images/cancelbtn.png", "class": "cancelImg"})
-                                        )
-                                    )
-                                ); */
                             }
                             // If we are in three-mode display, change the cloned item into three-mode view sizing
                             else if(workspaceDisplayer.hasClass("three-view-display"))
@@ -1291,8 +1536,8 @@ function mainThread(originalArray, filesArray, fileMasker)
                                 elementAdded.classList.add(Object.keys(fileMasker).find(key => fileMasker[key] === theWorkspace.fileContents[g].fileFrom));
                                 elementAdded.appendChild(
                                     $("<div></div>").attr({"class": "pageDisplayItem-2 deckItem deckLowerItem"}).append(
-                                        theWorkspace.fileContents[g].imageData.includes("-thisIsVideo") ?
-                                        $("<video>").attr({"src": theWorkspace.fileContents[g].imageData.substring(0, theWorkspace.fileContents[g].imageData.indexOf("-thisIsVideo")), "class": "filePagePreviewed-3"}) : 
+                                        theWorkspace.fileContents[g].imageData.includes("-thisIsMedia") ?
+                                        $("<video>").attr({"src": theWorkspace.fileContents[g].imageData.substring(0, theWorkspace.fileContents[g].imageData.indexOf("-thisIsMedia")), "class": "filePagePreviewed-3"}) : 
                                         $("<img>").attr({"src": theWorkspace.fileContents[g].imageData, "class": "filePagePreviewed-3"}),
                                         $("<div></div>").attr({"class": "smallPageNumber pageNumber"}).text(theWorkspace.fileContents[g].pageNumber)
                                     )[0]
@@ -1308,19 +1553,20 @@ function mainThread(originalArray, filesArray, fileMasker)
                             // Otherwise we are in single view mode, changing cloned item into single-mode sizing
                             else
                             {
+                                // Unhiding the tags container 
                                 if(g == 0)
                                 {
                                     $("#add-tags-heading, #tagsContainer").animate( {opacity: "100%"}, 600);
                                     $("#deckContainer").animate( {"margin-left": "0px"}, 600 );
                                     $("#tagsContainer").removeClass("invisible");
-                                    $("#tagInput").removeClass("inactive");
+                                    $("#tagInput").removeClass("inactive").prop("disabled", false);
                                 }
                                 elementAdded.classList.add("wholeSlideContainer-1");
                                 elementAdded.classList.add(Object.keys(fileMasker).find(key => fileMasker[key] === theWorkspace.fileContents[g].fileFrom));
                                 elementAdded.appendChild(
                                     $("<div></div>").attr({"class": "pageDisplayItem-2 deckItem deckLowerItem"}).append(
-                                        theWorkspace.fileContents[g].imageData.includes("-thisIsVideo") ?
-                                        $("<video>").attr({"src": theWorkspace.fileContents[g].imageData.substring(0, theWorkspace.fileContents[g].imageData.indexOf("-thisIsVideo")), "class": "filePagePreviewed-1"}) : 
+                                        theWorkspace.fileContents[g].imageData.includes("-thisIsMedia") ?
+                                        $("<video>").attr({"src": theWorkspace.fileContents[g].imageData.substring(0, theWorkspace.fileContents[g].imageData.indexOf("-thisIsMedia")), "class": "filePagePreviewed-1"}) : 
                                         $("<img>").attr({"src": theWorkspace.fileContents[g].imageData, "class": "filePagePreviewed-1"}),
                                         $("<div></div>").attr({"class": "pageNumber"}).text(theWorkspace.fileContents[g].pageNumber)
                                     )[0]
@@ -1335,6 +1581,7 @@ function mainThread(originalArray, filesArray, fileMasker)
                             }
                         }
 
+                        // Looping through the tags list and populating them into the container
                         for(let lt = 0; lt < theWorkspace.tags.length; lt++)
                         {
                             $("#tagsBatch").append(
@@ -1348,11 +1595,12 @@ function mainThread(originalArray, filesArray, fileMasker)
                                 )
                             );
                         }
+                        // On click handling for the cancel button on the tags
                         $(".removeTag").unbind('click').bind('click',
                             function()
                             {
                                 $(this).parent().parent().detach();
-                                $("#single-mode").find(".save-deck").removeClass("inactive");
+                                $("#single-mode").find(".save-deck").removeClass("inactive").prop("disabled", false);
                             }
                         );
                         break;
@@ -1360,15 +1608,15 @@ function mainThread(originalArray, filesArray, fileMasker)
                 }
 
                 // On click handler for cancel button
-                // Remove file when button clicked
+                // Hide page when button clicked
                 $(".cancelBtn").unbind('click').bind('click', workspaceUndo);
             }
         }
     );
 
-
+    // Records the previous view state in the collection container
     var fromState = "";
-    // Select options
+    // handling on change event for the View state dropdown
     $('#select-number-of-decks').change(
         function()
         {
@@ -1384,12 +1632,12 @@ function mainThread(originalArray, filesArray, fileMasker)
             {
                 $("#tagsBatch").empty();
                 $("#addPagesToDeckbtn")[0].innerHTML = "A<br>d<br>d<br><br>t<br>o<br><br>D<br>e<br>c<br>k";
-                $("#addPagesToDeckbtn").addClass("inactive").addClass("unclickable");
+                $("#addPagesToDeckbtn").addClass("inactive").prop("disabled", true);
                 $("#insertInto-1, #insertInto-2, #insertInto-3").fadeOut();
                 $("#package-navbar .undo-button").show();
                 $("#add-tags-heading, #tagsContainer").animate( {opacity: "0"}, 600);
                 $("#tagsContainer").addClass("invisible");
-                $("#tagInput").addClass("inactive");
+                $("#tagInput").addClass("inactive").prop("disabled", true);
                 $("#deckContainer").animate( {"margin-left": "60px"}, 600 );
 
                 // whenever someone proceeds to view list of workspaces, clear all workspace viewers
@@ -1399,11 +1647,11 @@ function mainThread(originalArray, filesArray, fileMasker)
                 $("#workspace-1, #full-mode").show();
                 $("#single-mode, .two-view, .three-view").hide();
             }
-            // One deck mode
+            // One workspace mode
             else if (value == "1 deck")
             {
                 $("#tagsBatch").empty();
-                $("#addPagesToDeckbtn").removeClass("inactive");
+                $("#addPagesToDeckbtn").removeClass("inactive").prop("disabled", false);
                 $("#addPagesToDeckbtn")[0].innerHTML = "I<br>n<br>s<br>e<br>r<br>t<br><br>I<br>n<br>t<br>o";
                 $("#insertInto-2, #insertInto-3").fadeOut();
                 $("#insertInto-1").fadeIn();
@@ -1419,18 +1667,18 @@ function mainThread(originalArray, filesArray, fileMasker)
                 // Recording what view mode we are coming from
                 fromState = "1 deck";
             }
-            // Two deck mode
+            // Two workspaces mode
             else if(value == "2 decks")
             {
                 $("#tagsBatch").empty();
-                $("#addPagesToDeckbtn").removeClass("inactive");
+                $("#addPagesToDeckbtn").removeClass("inactive").prop("disabled", false);
                 $("#addPagesToDeckbtn")[0].innerHTML = "I<br>n<br>s<br>e<br>r<br>t<br><br>I<br>n<br>t<br>o";
                 $("#insertInto-3").fadeOut();
                 $("#insertInto-1, #insertInto-2").fadeIn();
                 $("#package-navbar .undo-button").hide();
                 $("#add-tags-heading, #tagsContainer").animate( {opacity: "0"}, 600);
                 $("#tagsContainer").addClass("invisible");
-                $("#tagInput").addClass("inactive");
+                $("#tagInput").addClass("inactive").prop("disabled", true);
                 $("#deckContainer").animate( {"margin-left": "60px"}, 600 );
                 
                 // Simply changing viewer 2 and 3 into two-mode view
@@ -1461,17 +1709,17 @@ function mainThread(originalArray, filesArray, fileMasker)
                 // Recording what view mode we are coming from
                 fromState = "2 decks";
             }
-            // Three deck mode
+            // Three workspaces mode
             else
             {
                 $("#tagsBatch").empty();
-                $("#addPagesToDeckbtn").removeClass("inactive");
+                $("#addPagesToDeckbtn").removeClass("inactive").prop("disabled", false);
                 $("#addPagesToDeckbtn")[0].innerHTML = "I<br>n<br>s<br>e<br>r<br>t<br><br>I<br>n<br>t<br>o";
                 $("#insertInto-1, #insertInto-2, #insertInto-3").fadeIn();
                 $("#package-navbar .undo-button").hide();
                 $("#add-tags-heading, #tagsContainer").animate( {opacity: "0"}, 600);
                 $("#tagsContainer").addClass("invisible");
-                $("#tagInput").addClass("inactive");
+                $("#tagInput").addClass("inactive").prop("disabled", true);
                 $("#deckContainer").animate( {"margin-left": "60px"}, 600 );
                 
                 // Simply changing viewer 2 and 3 into three-mode view
@@ -1505,25 +1753,26 @@ function mainThread(originalArray, filesArray, fileMasker)
         }
     );
 
-    // When undo button is clicked
+    // Package/Collection Undo button click handling
     $("#package-navbar .undo-button").on('click',
         function undoFunctionality()
         {
             if(itemsToUndo.undoFrom == "addPages")
             {
-                // This undo functionality is not complete
-                itemsToUndo.items.forEach( (item) => { item.detach() } );
-                
+                itemsToUndo.items.forEach( (item) => { item.detach() } );    
             }
             else if(itemsToUndo.undoFrom == "removePage")
             {
                 var prevElement = itemsToUndo.items[1];
                 var nextElement = itemsToUndo.items[2];
 
+                // If previous element existed 
                 if(prevElement.length == 1)
                     prevElement[0].insertAdjacentElement("afterEnd", itemsToUndo.items[0][0]);
+                // If next element existed
                 else if (nextElement.length == 1)
                     $("#collectionViewer")[0].insertBefore(itemsToUndo.items[0][0], nextElement[0]);
+                // The removed item was alone
                 else
                     $("#collectionViewer")[0].appendChild(itemsToUndo.items[0][0]);
             }
@@ -1532,46 +1781,34 @@ function mainThread(originalArray, filesArray, fileMasker)
                 var prevElement = itemsToUndo.items[3];
                 var nextElement = itemsToUndo.items[4];
 
+                // If previous element existed
                 if(prevElement.length == 1)
                     prevElement[0].insertAdjacentElement("afterEnd", itemsToUndo.items[2][0]);
+                // If next element existed
                 else if (nextElement.length == 1)
                     $("#full-mode")[0].insertBefore(itemsToUndo.items[2][0], nextElement[0]);
+                // The removed item was alone
                 else
                     $("#full-mode")[0].appendChild(itemsToUndo.items[2][0]);
 
+                // Inserting the workspace content back into the array
                 Workspaces.splice(itemsToUndo.items[0], 0, itemsToUndo.items[1]);
-
             }
-
-            $(this).addClass("inactive");
+            // Disable this undo button
+            $(this).addClass("inactive").prop("disabled", true);
             itemsToUndo.items = [];
         }
     );
-
-    var pressedDown = false;
-
-    $("#addPagesToDeckbtn").on('mousedown',
-        function()
-        {
-            $(this).addClass("pressed");
-            pressedDown = true;
-        }    
-    )
     
-    $("#addPagesToDeckbtn").on('mouseleave',
-        function()
-        {
-            if(pressedDown)
-            {
-                $(this).removeClass("pressed");
-                pressedDown = false;
-            }
-        }    
-    )
-
+    
+    /**
+     * Inserts pages into a workspace
+     * @param {Node} theDisplayer - Jquery object: the workspace displayer
+     */
     function minorBtnsClickHandler(theDisplayer)
     {
         var indexOfWorkspace;
+        // Search for the desired workspace
         for(let  i = 0; i < Workspaces.length; i++)
         {
             if(Workspaces[i].fileName == theDisplayer.prev().find(".workspace-name-written").text())
@@ -1580,16 +1817,21 @@ function mainThread(originalArray, filesArray, fileMasker)
                 break;
             }    
         }
+        // Resetting the undo info
         if(indexOfWorkspace != null)
             itemsToUndo_3[theDisplayer.parent().attr("id")] = { undoFrom: "insertPage", items: [] };
 
 
         if($("#filePreviewGrid").hasClass("videoOnDisplay"))
         {
+            // Activate save and undo button
             if(indexOfWorkspace != null)
-                theDisplayer.prev().find(".save-deck, .undo-button").removeClass("inactive");
+                theDisplayer.prev().find(".save-deck, .undo-button").removeClass("inactive").prop("disabled", false);
+            
             var theVideo = $("#filePreviewGrid").children()[0];
             var theVideoNameMask = theVideo.getAttribute("id");
+            
+            // Rendering the video on a hidden canvas to get cover page image
             if($("#canv-"+theVideoNameMask).length == 0)
             {
                 var canv = document.createElement("canvas");
@@ -1606,6 +1848,7 @@ function mainThread(originalArray, filesArray, fileMasker)
             var elementAdded = theDisplayer[0].lastChild;
             elementAdded.id = "itemNum-" + indexOfWorkspace + "-" + parseInt(theDisplayer.children().length - 1);
             
+            // If we are in two-mode display, change the cloned item into two-mode view sizing
             if(theDisplayer.hasClass("two-view-display"))
             {
                 elementAdded.classList.add("wholeSlideContainer-2");
@@ -1624,6 +1867,7 @@ function mainThread(originalArray, filesArray, fileMasker)
                     )[0]
                 );
             }
+            // If we are in three-mode display, change the cloned item into three-mode view sizing
             else if(theDisplayer.hasClass("three-view-display"))
             {
                 elementAdded.classList.add("wholeSlideContainer-3");
@@ -1642,6 +1886,7 @@ function mainThread(originalArray, filesArray, fileMasker)
                     )[0]
                 );
             }
+            // Otherwise we are in single view mode, changing cloned item into single-mode sizing
             else
             {
                 elementAdded.classList.add("wholeSlideContainer-1");
@@ -1660,11 +1905,82 @@ function mainThread(originalArray, filesArray, fileMasker)
                     )[0]
                 );
             }
+            // Adding the item to the things to undo array
             itemsToUndo_3[theDisplayer.parent().attr("id")].items.push(elementAdded);
         }
         else if($("#filePreviewGrid").hasClass("imageOnDisplay"))
         {
-            console.log("planning...");
+            // Activate save and undo button
+            if(indexOfWorkspace != null)
+                theDisplayer.prev().find(".save-deck, .undo-button").removeClass("inactive").prop("disabled", false);
+            
+            var theImage = $("#filePreviewGrid").children()[0];
+            var theImageNameMask = theImage.getAttribute("id");
+
+            let clonedItem = document.createElement("div");
+            theDisplayer[0].appendChild(clonedItem);
+            var elementAdded = theDisplayer[0].lastChild;
+            elementAdded.id = "itemNum-" + indexOfWorkspace + "-" + parseInt(theDisplayer.children().length - 1);
+            
+            // If we are in two-mode display, change the cloned item into two-mode view sizing
+            if(theDisplayer.hasClass("two-view-display"))
+            {
+                elementAdded.classList.add("wholeSlideContainer-2");
+                elementAdded.classList.add(theImage.getAttribute("id").split('-')[0]);
+                elementAdded.appendChild(
+                    $("<div></div>").attr({"class": "pageDisplayItem-2 deckItem deckLowerItem imagePresent"}).append(
+                        $("<img>").attr({"src": theImage.getAttribute("src"), "class": "filePagePreviewed-2"}),
+                        $("<div></div>").attr({"class": " mediumPageNumber pageNumber"}).text(fileMasker[theImageNameMask])
+                    )[0]
+                );
+                elementAdded.appendChild(
+                    $("<div></div>").attr({"class": "cancelContainer deckItem"}).append(
+                        $("<div></div>").attr({"class": "cancelBtn cancelBtn-scaled"}).append(
+                            $("<img>").attr({"src": "images/cancelbtn.png", "class": "cancelImg"})
+                        )
+                    )[0]
+                );
+            }
+            // If we are in three-mode display, change the cloned item into three-mode view sizing
+            else if(theDisplayer.hasClass("three-view-display"))
+            {
+                elementAdded.classList.add("wholeSlideContainer-3");
+                elementAdded.classList.add(theImage.getAttribute("id").split('-')[0]);
+                elementAdded.appendChild(
+                    $("<div></div>").attr({"class": "pageDisplayItem-2 deckItem deckLowerItem imagePresent"}).append(
+                        $("<img>").attr({"src": theImage.getAttribute("src"), "class": "filePagePreviewed-3"}),
+                        $("<div></div>").attr({"class": " smallPageNumber pageNumber"}).text(fileMasker[theImageNameMask])
+                    )[0]
+                );
+                elementAdded.appendChild(
+                    $("<div></div>").attr({"class": "cancelContainer deckItem"}).append(
+                        $("<div></div>").attr({"class": "cancelBtn cancelBtn-scaled"}).append(
+                            $("<img>").attr({"src": "images/cancelbtn.png", "class": "cancelImg"})
+                        )
+                    )[0]
+                );
+            }
+            // Otherwise we are in single view mode, changing cloned item into single-mode sizing
+            else
+            {
+                elementAdded.classList.add("wholeSlideContainer-1");
+                elementAdded.classList.add(theImage.getAttribute("id").split('-')[0]);
+                elementAdded.appendChild(
+                    $("<div></div>").attr({"class": "pageDisplayItem-2 deckItem deckLowerItem imagePresent"}).append(
+                        $("<img>").attr({"src": theImage.getAttribute("src"), "class": "filePagePreviewed-1"}),
+                        $("<div></div>").attr({"class": "pageNumber"}).text(fileMasker[theImageNameMask])
+                    )[0]
+                );
+                elementAdded.appendChild(
+                    $("<div></div>").attr({"class": "cancelContainer deckItem"}).append(
+                        $("<div></div>").attr({"class": "cancelBtn"}).append(
+                            $("<img>").attr({"src": "images/cancelbtn.png", "class": "cancelImg"})
+                        )
+                    )[0]
+                );
+            }
+            // Adding the item to the things to undo array
+            itemsToUndo_3[theDisplayer.parent().attr("id")].items.push(elementAdded);
         }
         else
         {
@@ -1674,8 +1990,9 @@ function mainThread(originalArray, filesArray, fileMasker)
 
             if(selectedPages.length > 0)
             {
+                // Activate the undo and save button
                 if(indexOfWorkspace != null)
-                    theDisplayer.prev().find(".save-deck, .undo-button").removeClass("inactive");
+                    theDisplayer.prev().find(".save-deck, .undo-button").removeClass("inactive").prop("disabled", false);
 
                 // Loop through all selected items
                 for(let i = 0; i < selectedPages.length; i++) 
@@ -1690,6 +2007,7 @@ function mainThread(originalArray, filesArray, fileMasker)
                     var elementAdded = theDisplayer[0].lastChild;
                     elementAdded.id = "itemNum-" + indexOfWorkspace + "-" + parseInt(theDisplayer.children().length - 1);
                     
+                    // If we are in two-mode display, change the cloned item into two-mode view sizing
                     if(theDisplayer.hasClass("two-view-display"))
                     {
                         elementAdded.classList.add("wholeSlideContainer-2");
@@ -1708,6 +2026,7 @@ function mainThread(originalArray, filesArray, fileMasker)
                             )[0]
                         );
                     }
+                    // If we are in three-mode display, change the cloned item into three-mode view sizing
                     else if(theDisplayer.hasClass("three-view-display"))
                     {
                         elementAdded.classList.add("wholeSlideContainer-3");
@@ -1726,6 +2045,7 @@ function mainThread(originalArray, filesArray, fileMasker)
                             )[0]
                         );
                     }
+                    // Otherwise we are in single view mode, changing cloned item into single-mode sizing
                     else
                     {
                         elementAdded.classList.add("wholeSlideContainer-1");
@@ -1744,12 +2064,14 @@ function mainThread(originalArray, filesArray, fileMasker)
                             )[0]
                         );
                     }
+                    // Adding the item to the things to undo array
                     itemsToUndo_3[theDisplayer.parent().attr("id")].items.push(elementAdded);
                 }
             }
         } 
     }
 
+    // On click handling for the smaller "numbered" Insert Pages buttons
     $(".smallerInsert").on('click', 
         function()
         {
@@ -1761,12 +2083,35 @@ function mainThread(originalArray, filesArray, fileMasker)
             else
                 minorBtnsClickHandler(theDisplayer);
             
+            // Handling cancel button click for the newly added workspace pages 
             $(".cancelBtn").unbind('click').bind('click', workspaceUndo); 
         }
     );
 
+    // Simulating the effect where a button scales down when pressed, and reverts to normal size when released
+    var pressedDown = false;
+
+    $("#addPagesToDeckbtn").on('mousedown',
+        function()
+        {
+            $(this).addClass("pressed");
+            pressedDown = true;
+        }    
+    );
+    
+    $("#addPagesToDeckbtn").on('mouseleave',
+        function()
+        {
+            if(pressedDown)
+            {
+                $(this).removeClass("pressed");
+                pressedDown = false;
+            }
+        }    
+    );
+
     // The Top Right Button on the right Preview Grid
-    // On click, adds all selected items to lower Collection grid
+    // On click, adds all selected/highlighted items to lower Collection grid
     $("#addPagesToDeckbtn").on('mouseup',
     function()
     {
@@ -1781,7 +2126,7 @@ function mainThread(originalArray, filesArray, fileMasker)
             var theVideoNameMask = theVideo.getAttribute("id");
             var theVideoName = fileMasker[theVideoNameMask];
             
-            $("#package-navbar .undo-button").removeClass("inactive");                        
+            $("#package-navbar .undo-button").removeClass("inactive").prop("disabled", false);                        
 
             // Adding the item to the things to undo array
             itemsToUndo.items.push(
@@ -1801,6 +2146,7 @@ function mainThread(originalArray, filesArray, fileMasker)
             // Append selected items to the collection viewer grid
             $("#collectionViewer").append(itemsToUndo.items[0]);
             
+            // Rendering the video on a hidden canvas to get cover page image
             if($("#canv-"+theVideoNameMask).length == 0)
             {
                 var canv = document.createElement("canvas");
@@ -1814,7 +2160,29 @@ function mainThread(originalArray, filesArray, fileMasker)
         }
         else if($("#filePreviewGrid").hasClass("imageOnDisplay"))
         {
-            console.log("planning...");
+            var theImage = $("#filePreviewGrid").children()[0];
+            var theImageNameMask = theImage.getAttribute("id");
+            var theImageName = fileMasker[theImageNameMask];
+            
+            $("#package-navbar .undo-button").removeClass("inactive").prop("disabled", false);                        
+
+            // Adding the item to the things to undo array
+            itemsToUndo.items.push(
+                $("<div></div>").attr({"id": theImageNameMask+"-"+theImageNameMask, "class": "wholeSlideContainer imagePresent"}).append(                
+                    $("<div</div>").attr({"class": "pageDisplayItem-2 deckItem deckLowerItem"}).append(
+                        $("<img>").attr({"src": "files/"+theImageName, "class": "filePagePreviewed_1"}),
+                        $("<div></div>").attr({"class": "pageNumber"}).text(theImageName)
+                    ),
+                    $("<div></div>").attr({"class": "cancelContainer deckItem"}).append(
+                        $("<div></div>").attr({"class": "cancelBtn"}).append(
+                            $("<img>").attr({"src": "images/cancelbtn.png", "class": "cancelImg"})
+                        )
+                    )
+                )
+            );
+
+            // Append selected items to the collection viewer grid
+            $("#collectionViewer").append(itemsToUndo.items[0]);
         }
         else
         {
@@ -1824,15 +2192,12 @@ function mainThread(originalArray, filesArray, fileMasker)
 
             if(selectedPages.length > 0)
             {
-                $("#package-navbar .undo-button").removeClass("inactive");
+                $("#package-navbar .undo-button").removeClass("inactive").prop("disabled", false);
 
                 // Loop through all selected items
                 for(let i = 0; i < selectedPages.length; i++) 
                 {
                     let item = selectedPages[i];
-
-                    //var fileItsFromMask = Object.keys(fileMasker).find(key => fileMasker[key] === item.getAttribute("id").split("-")[0]);
-                    
                     item.classList.remove("pageSelected");
                     var idNumber = item.firstChild.getAttribute("id").split('-')[1];
                     $("#page_"+idNumber).parent().next().children()[0].checked = false;
@@ -1862,7 +2227,7 @@ function mainThread(originalArray, filesArray, fileMasker)
         $(".wholeSlideContainer").find(".cancelBtn").unbind('click').bind('click',
             function()
             {
-                $("#package-navbar .undo-button").removeClass("inactive");
+                $("#package-navbar .undo-button").removeClass("inactive").prop("disabled", false);
                 itemsToUndo.undoFrom = "removePage";
                 itemsToUndo.items = [];
                 itemsToUndo.items.push($(this).parent().parent());
@@ -1880,15 +2245,15 @@ function mainThread(originalArray, filesArray, fileMasker)
     function()
     {
         $("#insertInto-1, #insertInto-2, #insertInto-3").fadeOut();
-        $("#addPagesToDeckbtn").removeClass("inactive").removeClass("unclickable");
+        $("#addPagesToDeckbtn").removeClass("inactive").prop("disabled", false);
         $("#addPagesToDeckbtn")[0].innerHTML = "A<br>d<br>d<br><br>t<br>o<br><br>D<br>e<br>c<br>k";
 
         $("#add-tags-heading, #tagsContainer").animate( {opacity: "0"}, 600);
         $("#tagsContainer").addClass("invisible");
-        $("#tagInput").addClass("inactive");
+        $("#tagInput").addClass("inactive").prop("disabled", true);
         $("#deckContainer").animate( {"margin-left": "60px"}, 600 );
         // Activate undo button
-        $("#package-navbar .undo-button").addClass("inactive").show();
+        $("#package-navbar .undo-button").addClass("inactive").prop("disabled", true).show();
 
         $(".deck-to-export-options").val("");
         // whenever someone proceeds to add new workspace, clear all workspace viewers
@@ -1903,10 +2268,14 @@ function mainThread(originalArray, filesArray, fileMasker)
         $("#add-to-workspace, #collectionViewer, #backButton").show();
     });
 
+
+    /**
+     * Brings the user back to Full List View
+     */
     function backToFullList()
     {
         // Deactivate undo button
-        $("#package-navbar .undo-button").addClass("inactive").hide();
+        $("#package-navbar .undo-button").addClass("inactive").prop("disabled", true).hide();
 
         // Hide all other irrelevant ones
         $("#collectionViewer, #split-to-decks, #backButton, #add-to-workspace").hide();
@@ -1940,12 +2309,12 @@ function mainThread(originalArray, filesArray, fileMasker)
 
                 var objectPushed = {
                     fileFrom: fileMasker[idSplitted[0]],
-                    pageNumber: collChildren[ch].firstChild.firstChild.nodeName.toLowerCase() == "video" ? fileMasker[idSplitted[1]] : idSplitted[1],
+                    pageNumber: collChildren[ch].firstChild.firstChild.nodeName.toLowerCase() == "video" || collChildren[ch].classList.contains("imagePresent") ? fileMasker[idSplitted[1]] : idSplitted[1],
                     imageData: collChildren[ch].firstChild.firstChild.nodeName.toLowerCase() == "video" ? 
-                                collChildren[ch].firstChild.firstChild.getAttribute("src") + "-thisIsVideo":
+                                collChildren[ch].firstChild.firstChild.getAttribute("src") + "-thisIsMedia":
                                 collChildren[ch].firstChild.firstChild.getAttribute("src")
                 }
-                if(objectPushed.imageData.includes("-thisIsVideo"))
+                if(objectPushed.imageData.includes("-thisIsMedia") || collChildren[ch].classList.contains("imagePresent"))
                     videoFound = true;
                 collectionChildren.push(objectPushed);
             }
@@ -1968,15 +2337,18 @@ function mainThread(originalArray, filesArray, fileMasker)
                 )
             );                  
             
+            // On click handling for the workspace cancel button
             $(".removeDeck").unbind('click').bind('click',
                 function()
                 {
                     var thisButton = $(this);
                     var theWorkspace = thisButton.parent().parent();
 
+                    // Reset undo info
                     itemsToUndo.items = [];
                     itemsToUndo.undoFrom = "removeDeck";
 
+                    // Find the workspace inside the list and store the data, incase of undo
                     Workspaces.forEach(
                         function(item, index)
                         {
@@ -1990,10 +2362,11 @@ function mainThread(originalArray, filesArray, fileMasker)
                         }
                     );
                     
+                    // Storing undo info
                     itemsToUndo.items.push(theWorkspace);
                     itemsToUndo.items.push(theWorkspace.prev());
                     itemsToUndo.items.push(theWorkspace.next());
-                    $("#package-navbar .undo-button").removeClass("inactive");
+                    $("#package-navbar .undo-button").removeClass("inactive").prop("disabled", false);
 
                     theWorkspace.detach();
                 }
@@ -2026,7 +2399,7 @@ function mainThread(originalArray, filesArray, fileMasker)
                     $("#single-mode .workspace-bottom-navbar .deck-to-view-options").trigger('change');
 
                     // On click handler for cancel button
-                    // Remove file when button clicked
+                    // Remove page when button clicked
                     $(".cancelBtn").unbind('click').bind('click', workspaceUndo);
                 }
             );
@@ -2037,11 +2410,13 @@ function mainThread(originalArray, filesArray, fileMasker)
     $("#select-all-pages").click(
         function()
         {
+            // If it was checked, clicking it deselects all pages
             if(document.getElementById('select-all-pages').checked)
             {
                 $("#filePreviewGrid .pageDisplayItem").addClass("pageSelected");
                 $(".tickPage").prop("checked", true);
             }
+            // If it was unchecked, clicking it selects all pages
             else
             {
                 $("#filePreviewGrid .pageDisplayItem").removeClass("pageSelected");
@@ -2050,49 +2425,163 @@ function mainThread(originalArray, filesArray, fileMasker)
         }
     );
 
-    $(".numberRanges").on('keyup', 
+
+    // When this element gains focus, reveal the add button
+    $("#tagInput").focus(() => { $("#plus-button").fadeIn(1000); $("#tagInput").removeClass("full-basis") });
+
+    // When the element looses focus, hide the add button
+    $("#tagInput").focusout(() => { $("#plus-button").fadeOut(); $("#tagInput").addClass("full-basis")  });
+
+    /**
+     * Handler that creates the tag element into the container
+     */
+    function createTagElement()
+    {
+        if($("#tagInput")[0].value.trim() != "")
+        {
+            $("#tagsBatch").append(
+                $("<div></div>").attr({"class": "upperTagContainer"}).append(
+                    $("<div></div>").attr({"class": "tagContent"}).text($("#tagInput")[0].value),
+                    $("<div></div>").attr({"class": "cancelContainer-2 deckItem"}).append(
+                        $("<div></div>").attr({"class": "removeTag"}).append(
+                            $("<img>").attr({"src": "images/cancelbtn.png", "class": "cancelImg"})
+                        )
+                    )
+                )
+            );
+            
+            // On click handling for remove tag button
+            $(".removeTag").unbind('click').bind('click',
+                function()
+                {
+                    $(this).parent().parent().detach();
+                    // Activate the save button
+                    $("#single-mode").find(".save-deck").removeClass("inactive").prop("disabled", false);
+                }
+            );
+
+            $("#single-mode").find(".save-deck").removeClass("inactive").prop("disabled", false);
+            $("#tagInput").val("");    
+        }
+        else
+        {
+            alert("Can't create empty tag");
+        }  
+    }
+
+    // Handling click for the add tag button
+    $("#plus-button").on('click', () => { createTagElement() });
+
+
+    /**
+     * Selects all pages in the given number range
+     */
+    function selectRange()
+    {
+        var minValue = parseInt($("#minPageToSelect").val());
+        var maxValue = parseInt($("#maxPageToSelect").val());
+
+        if($("#minPageToSelect").val() == "")
+            alert("The minimum field can't be empty!");
+        else if($("#maxPageToSelect").val() == "")
+            alert("The maximum field can't be empty!");
+        else if(isNaN($("#minPageToSelect").val()))
+            alert("Minimum field contains characters which are not numbers!");
+        else if(isNaN($("#maxPageToSelect").val()))
+            alert("Maximum field contains characters which are not numbers!");
+        else if(minValue < 1)
+            alert("Minimum page number should be 1");
+        else if(maxValue < 1)
+            alert("Maximum page number cannot be less than 1");
+        else if(minValue > maxValue)
+            alert("Minimun cannot be larger than the Maximum");
+        else if( minValue <= maxValue )
+        {
+            for(let i = minValue - 1; i < maxValue; i++)
+            {
+                if(!$(".tickPage:eq(" + i + ")").prop("checked"))
+                    $(".tickPage:eq(" + i + ")").prop("checked", true).trigger('click');
+            }
+            $("#select-multiple").removeClass("hovered");
+            $(".numberRanges").blur();
+        }
+    }
+
+    // When mouse enters this button, it should get hovered 
+    $("#select-multiple").on('mouseenter', 
+        function()
+        {
+            $(".numberRanges").blur();
+            $(this).addClass("hovered");
+        }    
+    );
+
+    // When mouse leaves the button, it should get unhovered
+    $("#select-multiple").on('mouseleave', 
+        function()
+        {
+            $(this).removeClass("hovered");
+        }    
+    );
+
+    // When clicked, calls the handler to select pages in the given range
+    $("#select-multiple").on('click', selectRange);
+
+    $(document).on('keyup', 
         function (e) 
         {
+            // Getting the event object
             e = e || window.event;
 
             if (e.key === 'Enter' || e.keyCode === 13)
-            {
-                var minValue = parseInt($("#minPageToSelect").val());
-                var maxValue = parseInt($("#maxPageToSelect").val());
-
-                if(minValue < 1)
-                    alert("Minimum page number should be 1");
-                else if(maxValue < 1)
-                    alert("Maximum page number cannot be less than 1");
-                else if(minValue > maxValue)
-                    alert("Minimun cannot be larger than the Maximum");
-                else if( minValue <= maxValue )
-                {
-                    for(let i = minValue - 1; i < maxValue; i++)
-                    {
-                        if(!$(".tickPage:eq(" + i + ")").prop("checked"))
-                            $(".tickPage:eq(" + i + ")").prop("checked", true).trigger('click');
-                    }
-                }
+            { 
+                if ($("#maxPageToSelect").is(":focus") || $("#minPageToSelect").is(":focus") || $("#select-multiple").hasClass("hovered"))
+                    selectRange();
+                else if($("#tagInput").is(":focus"))
+                    $("#plus-button").trigger('click');
             }
-            else if(e.key == "ArrowLeft" || e.key == "ArrowRight" || e.keyCode == 37 || e.keyCode == 39 || e.key == "Left" || e.key == "Right")
+            else if(e.key == "ArrowLeft" || e.keyCode == 37 || e.key == "Left")
             {
                 if($("#minPageToSelect").is(":focus"))
-                    $("#maxPageToSelect").focus();
-
-                else
+                {
+                    $(".numberRanges").blur();
+                    $("#select-multiple").addClass("hovered");
+                }
+                else if($("#maxPageToSelect").is(":focus"))
                     $("#minPageToSelect").focus();
+                else if($("#select-multiple").hasClass("hovered"))
+                {
+                    $("#maxPageToSelect").focus();
+                    $("#select-multiple").removeClass("hovered")
+                }
+            }
+            else if(e.key == "ArrowRight" || e.keyCode == 39 || e.key == "Right")
+            {
+                if($("#maxPageToSelect").is(":focus"))
+                {
+                    $(".numberRanges").blur();
+                    $("#select-multiple").addClass("hovered");
+                }
+                else if($("#minPageToSelect").is(":focus"))
+                    $("#maxPageToSelect").focus();
+                else if($("#select-multiple").hasClass("hovered"))
+                {
+                    $("#minPageToSelect").focus();
+                    $("#select-multiple").removeClass("hovered")
+                }
             }
         }
     );
 
-    // setting the list view(default) functionality
+    // Handling on click for the List-view checkbox 
     $("#list-view").click(
         function()
         {
-            $(this).addClass("unclickable");
+            // Disable this checkbox
+            $(this).prop("disabled", true);
+            // Enable gallery-view checkbox
             document.getElementById('gallery-view').checked = false;
-            $("#gallery-view").removeClass("unclickable");
+            $("#gallery-view").prop("disabled", false);
 
             $("#filePreviewContainer").removeClass("Gallery-view-mode");
             $("#filePreviewContainer").addClass("List-view-mode");
@@ -2106,9 +2595,11 @@ function mainThread(originalArray, filesArray, fileMasker)
     $("#gallery-view").click(
         function()
         {
-            $(this).addClass("unclickable");
+            // Disable this checkbox
+            $(this).prop("disabled", true);
+            // Enable List-view checkbox
             document.getElementById('list-view').checked = false;
-            $("#list-view").removeClass("unclickable");
+            $("#list-view").prop("disabled", false);
 
             $("#filePreviewContainer").removeClass("List-view-mode");
             $("#filePreviewContainer").addClass("Gallery-view-mode");
@@ -2121,6 +2612,7 @@ function mainThread(originalArray, filesArray, fileMasker)
                 $("#PagesListContainer").addClass("position-relative");
                 var pages = $("#PagesListContainer").children();
 
+                // Getting the offsets of each page
                 for(let hj = 0; hj < pages.length; hj++)
                     pagesOffsets["page_"+ (hj+1)] = pages[hj].offsetLeft;
 
@@ -2131,6 +2623,7 @@ function mainThread(originalArray, filesArray, fileMasker)
         }
     );
 
+    // Simulating the effect where a button scales down when pressed, and reverts to normal size when released
     var pressedDown_1 = false;
 
     $("#download-collection").on('mousedown',
@@ -2165,8 +2658,10 @@ function mainThread(originalArray, filesArray, fileMasker)
             }
             else
             {
+                // Copying the workspaces to a new JSON object
                 var theWorkspaces = JSON.parse(JSON.stringify(Workspaces));
 
+                // Deleting certain fields since back-end format was changed
                 theWorkspaces.forEach(
                     function(item)
                     {
@@ -2200,8 +2695,12 @@ function mainThread(originalArray, filesArray, fileMasker)
 
                 console.log(JSON.stringify(dataToPost));
 
+                /**
+                 * Checks if the export As of a workspace is a powerpoint and generates the powerpoint
+                 */
                 function checkForPowerpoint()
                 {
+                    // Looping through each workspace
                     Workspaces.forEach( (item) =>
                         {
                             let file = item;
@@ -2213,10 +2712,11 @@ function mainThread(originalArray, filesArray, fileMasker)
                                 { 
                                     var theSlide = exportPresentation.addSlide();
 
+                                    // If current page is a video, get cover page of video, from the invisible canvas
                                     if(itm.pageNumber.includes("mp4"))
                                     {
-                                        var videoPath = itm.imageData.substring(0, itm.imageData.indexOf("-thisIsVideo")) == "" ? 
-                                                        itm.imageData : itm.imageData.substring(0, itm.imageData.indexOf("-thisIsVideo"));
+                                        var videoPath = itm.imageData.substring(0, itm.imageData.indexOf("-thisIsMedia")) == "" ? 
+                                                        itm.imageData : itm.imageData.substring(0, itm.imageData.indexOf("-thisIsMedia"));
 
                                         var masker = Object.keys(fileMasker).find(key => fileMasker[key] === videoPath.split("/")[1]);
 
@@ -2240,6 +2740,8 @@ function mainThread(originalArray, filesArray, fileMasker)
                                 exportPresentation.writeFile({  fileName:  file.fileName}).then(
                                     function()
                                     {
+                                        // This is a temporary solution for a minimum viable product
+                                        // When the file is done downloading, send a request to the server to copy it to the collection directory
                                         console.log("Done exporting powerpoint file...");
 
                                         setTimeout(
@@ -2257,7 +2759,7 @@ function mainThread(originalArray, filesArray, fileMasker)
                                                     contentType: "application/json"
                                                 }).catch(() => { console.log("The export POST request failed...")});
 
-                                            }, 10000);
+                                            }, 7000);
                                     }
                                 );
                             }
@@ -2270,33 +2772,34 @@ function mainThread(originalArray, filesArray, fileMasker)
     );
     
 }
-
-function getIsDone(fileArray, theFiles, fileMasker)
-{
-    $(window).on('load', mainThread(fileArray, theFiles, fileMasker));
-}
-
-function printData(fileArray)
+/**
+ * Receives the array of files and their data and sends it to main thread
+ * @param {Array.<{file_name: String, last_modified: {date: String, month: String, year: String}}>} fileArray - List of files and their data
+ */
+function sendData(fileArray)
 {
     console.log(fileArray);
     var theFiles = {};
     var fileMasker = {};
-    // Loop through and display all results
+    // Loop through and create new object data in different format
     fileArray.forEach(
         function(item, index)
         {
+            // Encoding the file names behind keys, since these will be used in dom element classes and id
             fileMasker["mask_" + index] = item.file_name;
 
             theFiles["mask_" + index] = [];
         }
     );
-    getIsDone(fileArray, theFiles, fileMasker);
-}
 
+    // When the window is done loading, call the main thread function
+    $(window).on('load', mainThread(fileArray, theFiles, fileMasker));
+}
+// When the document is loaded send a get request to server, to get list of files in chosen directory 
 $(document).ready(
     function()
     {
-        $.get( "api/files", function(data, status) { printData(data.files); });
+        $.get( "api/files", function(data) { sendData(data.files); });
     }
 );
 
