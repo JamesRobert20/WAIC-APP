@@ -1446,7 +1446,9 @@ function mainThread(originalArray, filesArray, fileMasker)
                     }
                 }
             );
+            // Trigger the dropdown to refresh and display the new content
             thisButton.parent().next().next().find(".deck-to-view-options").trigger('change');
+            
             doneLoading();
             thisButton.addClass("inactive").prop("disabled", true);
         }
