@@ -1446,6 +1446,7 @@ function mainThread(originalArray, filesArray, fileMasker)
                     }
                 }
             );
+            thisButton.parent().next().next().find(".deck-to-view-options").trigger('change');
             doneLoading();
             thisButton.addClass("inactive").prop("disabled", true);
         }
